@@ -2,74 +2,159 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Impostor LoL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiverso Impostor</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #091428; color: #fff; text-align: center; padding: 20px; margin: 0; }
-        .card { background: #1e2328; padding: 20px; border: 2px solid #c8aa6e; border-radius: 10px; max-width: 400px; margin: 0 auto; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
-        h1 { color: #c8aa6e; text-transform: uppercase; margin-bottom: 20px; }
-        input { padding: 15px; width: 100%; margin: 8px 0; background: #010a13; color: #0ac8b9; border: 1px solid #463714; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        button { padding: 15px; width: 100%; background: #1e282d; color: #c8aa6e; border: 2px solid #c8aa6e; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; text-transform: uppercase; border-radius: 5px; transition: 0.2s; }
-        button:active { background: #0ac8b9; color: #000; transform: scale(0.98); }
-        .hidden { display: none; }
+        /* ESTILOS GENERALES */
+        body { font-family: 'Segoe UI', sans-serif; background: #0e0e10; color: #fff; text-align: center; margin: 0; padding: 20px; }
+        .hidden { display: none !important; }
         
-        /* Estilos de Juego */
-        #word-display { font-size: 40px; color: #0ac8b9; margin: 20px 0; font-weight: bold; text-transform: uppercase; text-shadow: 0 0 10px rgba(10, 200, 185, 0.4); }
-        .impostor { color: #ff4c4c !important; text-shadow: 0 0 10px rgba(255, 76, 76, 0.4) !important; }
+        /* CONTENEDOR PRINCIPAL */
+        .container { max-width: 600px; margin: 0 auto; }
+
+        /* GRID DE CATEGORÍAS */
+        .grid-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         
-        ul { text-align: left; background: #0a0a0c; padding: 15px; border-radius: 5px; border: 1px solid #333; }
-        li { list-style: none; margin-bottom: 8px; color: #cdbe91; font-size: 18px; border-bottom: 1px solid #222; padding-bottom: 4px; }
-        .role-desc { font-size: 14px; color: #888; margin-top: -10px; margin-bottom: 20px; font-style: italic; }
+        .cat-card {
+            background: #1f1f23; border: 2px solid #333; border-radius: 12px; padding: 20px;
+            cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .cat-card:hover { transform: translateY(-5px); border-color: #a970ff; background: #26262c; }
+        .cat-icon { font-size: 40px; margin-bottom: 10px; }
+        .cat-title { font-weight: bold; font-size: 18px; text-transform: uppercase; }
+
+        /* INPUTS Y BOTONES */
+        .input-box { background: #18181b; padding: 30px; border-radius: 15px; border: 1px solid #333; margin-top: 20px; }
+        input { width: 90%; padding: 12px; margin: 10px 0; background: #0e0e10; border: 1px solid #333; color: white; border-radius: 6px; font-size: 16px; }
+        
+        .btn-action { width: 100%; padding: 15px; background: #9147ff; color: white; border: none; font-weight: bold; font-size: 16px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+        .btn-action:hover { background: #772ce8; }
+        .btn-secondary { background: #333; margin-top: 10px; }
+
+        /* JUEGO */
+        .role-impostor { color: #ff4f4d; text-shadow: 0 0 10px rgba(255, 79, 77, 0.4); font-size: 32px; font-weight: bold; }
+        .role-crew { color: #00f0a0; text-shadow: 0 0 10px rgba(0, 240, 160, 0.4); font-size: 32px; font-weight: bold; }
+        
+        ul { list-style: none; padding: 0; text-align: left; }
+        li { padding: 10px; border-bottom: 1px solid #333; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="card">
-        <h1>⚔️ LoL Impostor</h1>
-        <input type="text" id="username" placeholder="Tu Nombre (Ej: Faker)" autocomplete="off" />
-        <input type="text" id="room" placeholder="Nombre de Sala (Ej: GRIETA)" autocomplete="off" />
-        <button onclick="joinGame()">ENTRAR</button>
-    </div>
+    <div class="container">
+        <h1>🕵️ ¿Quién es el Impostor?</h1>
 
-    <div id="lobby-screen" class="card hidden">
-        <h2>Sala: <span id="room-name" style="color:#fff"></span></h2>
-        <p style="color:#888">Esperando invocadores...</p>
-        <ul id="player-list"></ul>
-        <button id="start-btn" onclick="startGame()">INICIAR PARTIDA</button>
-    </div>
+        <div id="screen-menu">
+            <h3>Elige una categoría</h3>
+            <div class="grid-menu">
+                <div class="cat-card" onclick="selectCategory('lol')">
+                    <div class="cat-icon">⚔️</div>
+                    <div class="cat-title">League of LoL</div>
+                </div>
+                <div class="cat-card" onclick="selectCategory('futbol')">
+                    <div class="cat-icon">⚽</div>
+                    <div class="cat-title">Fútbol</div>
+                </div>
+                <div class="cat-card" onclick="selectCategory('comida')">
+                    <div class="cat-icon">🍕</div>
+                    <div class="cat-title">Comida</div>
+                </div>
+                <div class="cat-card" onclick="selectCategory('paises')">
+                    <div class="cat-icon">🌍</div>
+                    <div class="cat-title">Países</div>
+                </div>
+                <div class="cat-card" onclick="selectCategory('streamers')">
+                    <div class="cat-icon">📹</div>
+                    <div class="cat-title">Streamers</div>
+                </div>
+                <div class="cat-card" onclick="selectCategory('cosas')">
+                    <div class="cat-icon">📦</div>
+                    <div class="cat-title">Cosas Random</div>
+                </div>
+            </div>
+        </div>
 
-    <div id="game-screen" class="card hidden">
-        <h2 id="role-title" style="color:#c8aa6e">TU PERSONAJE</h2>
-        <div id="word-display">...</div>
-        <p class="role-desc" id="role-instruction">Memorízalo y espera tu turno.</p>
-        
-        <p style="text-align:left; color:#cdbe91; font-weight:bold;">Orden para hablar:</p>
-        <ul id="speak-order"></ul>
-        
-        <button onclick="backToLobby()">JUGAR OTRA VEZ</button>
+        <div id="screen-login" class="input-box hidden">
+            <h2 id="selected-cat-title">MODO: ???</h2>
+            <input type="text" id="username" placeholder="Tu Apodo">
+            <input type="text" id="room" placeholder="Código de Sala (ej: 1234)">
+            <button class="btn-action" onclick="joinGame()">ENTRAR A LA SALA</button>
+            <button class="btn-action btn-secondary" onclick="goBack()">⬅ VOLVER</button>
+        </div>
+
+        <div id="screen-lobby" class="input-box hidden">
+            <h2>Sala: <span id="lobby-room-code" style="color:#a970ff"></span></h2>
+            <p>Categoría: <strong id="lobby-category">...</strong></p>
+            <p>Jugadores conectados:</p>
+            <ul id="player-list"></ul>
+            <div id="waiting-msg" style="color: #777;">Esperando más jugadores...</div>
+            <button id="start-btn" class="btn-action hidden" onclick="startGame()">COMENZAR PARTIDA</button>
+        </div>
+
+        <div id="screen-game" class="input-box hidden">
+            <h2 id="game-role-title"></h2>
+            <div id="game-word" style="font-size: 24px; margin: 20px 0;"></div>
+            <p style="font-style: italic; color: #888;">Orden para hablar:</p>
+            <ul id="speak-order"></ul>
+            <button class="btn-action btn-secondary" onclick="location.reload()">SALIR / NUEVA</button>
+        </div>
     </div>
 
     <script>
         const socket = io();
-        let myRoom = "";
+        let selectedCategory = '';
+        let myRoom = '';
 
+        // --- NAVEGACIÓN ---
+        function selectCategory(cat) {
+            selectedCategory = cat;
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-login').classList.remove('hidden');
+            document.getElementById('selected-cat-title').innerText = "MODO: " + cat.toUpperCase();
+        }
+
+        function goBack() {
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-menu').classList.remove('hidden');
+        }
+
+        // --- SOCKETS ---
         function joinGame() {
             const name = document.getElementById('username').value.trim();
             const room = document.getElementById('room').value.trim().toUpperCase();
-            
-            if(!name || !room) return alert("¡Pon tu nombre y una sala!");
+
+            if (!name || !room) return alert("¡Faltan datos!");
 
             myRoom = room;
-            socket.emit('joinRoom', { roomCode: room, username: name });
+            // Enviamos también la categoría seleccionada
+            socket.emit('joinRoom', { roomCode: room, username: name, category: selectedCategory });
 
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('lobby-screen').classList.remove('hidden');
-            document.getElementById('room-name').innerText = room;
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.remove('hidden');
+            document.getElementById('lobby-room-code').innerText = room;
         }
 
-        socket.on('updatePlayerList', (players) => {
+        socket.on('updatePlayerList', (data) => {
+            // data ahora trae { players: [], category: '...' }
+            const players = data.players;
+            const currentCat = data.category;
+
+            document.getElementById('lobby-category').innerText = currentCat.toUpperCase();
+            
             const list = document.getElementById('player-list');
             list.innerHTML = players.map(p => `<li>👤 ${p.name}</li>`).join('');
+
+            const btn = document.getElementById('start-btn');
+            const msg = document.getElementById('waiting-msg');
+            
+            if (players.length >= 3) {
+                btn.classList.remove('hidden');
+                msg.classList.add('hidden');
+            } else {
+                btn.classList.add('hidden');
+                msg.classList.remove('hidden');
+            }
         });
 
         function startGame() {
@@ -77,34 +162,25 @@
         }
 
         socket.on('gameStarted', (data) => {
-            document.getElementById('lobby-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
 
-            const wordBox = document.getElementById('word-display');
-            const roleTitle = document.getElementById('role-title');
-            const instruction = document.getElementById('role-instruction');
+            const roleTitle = document.getElementById('game-role-title');
+            const wordDiv = document.getElementById('game-word');
 
             if (data.role === 'impostor') {
-                wordBox.innerText = "IMPOSTOR";
-                wordBox.classList.add('impostor');
-                roleTitle.innerText = "🤫 ERES EL TRAIDOR";
-                instruction.innerText = "No sabes el campeón. Escucha y miente.";
+                roleTitle.innerText = "🤫 ERES EL IMPOSTOR";
+                roleTitle.className = "role-impostor";
+                wordDiv.innerText = "Tu objetivo: Fingir que sabes de qué hablan.";
             } else {
-                wordBox.innerText = data.word;
-                wordBox.classList.remove('impostor');
-                roleTitle.innerText = "CAMPEÓN SECRETO";
-                instruction.innerText = "Describe al campeón sin ser muy obvio.";
+                roleTitle.innerText = "ERES TRIPULANTE";
+                roleTitle.className = "role-crew";
+                wordDiv.innerHTML = `La palabra secreta (${data.category}) es:<br><br><strong style="font-size:40px; color:#fff;">${data.word}</strong>`;
             }
 
-            const orderList = document.getElementById('speak-order');
-            orderList.innerHTML = data.order.map((name, i) => 
-                `<li><strong style="color:#0ac8b9">${i+1}.</strong> ${name}</li>`
-            ).join('');
+            const list = document.getElementById('speak-order');
+            list.innerHTML = data.order.map((name, i) => `<li>${i+1}. ${name}</li>`).join('');
         });
-
-        function backToLobby() {
-             window.location.reload(); 
-        }
     </script>
 </body>
 </html>
