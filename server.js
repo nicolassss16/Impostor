@@ -97,55 +97,50 @@ const wordPacks = {
 let rooms = {};
 
 io.on('connection', (socket) => {
-    console.log('Jugador conectado:', socket.id);
-
-    // Al unirse, el cliente envía: roomCode, username y category
+    
     socket.on('joinRoom', ({ roomCode, username, category }) => {
         socket.join(roomCode);
         
-        // Si la sala no existe, la creamos con la categoría elegida
         if (!rooms[roomCode]) {
-            // Validar que la categoría exista, si no, poner default 'cosas'
-            const selectedCategory = wordPacks[category] ? category : 'cosas';
-            
             rooms[roomCode] = {
                 players: [],
-                category: selectedCategory, // Guardamos la categoría de la sala
-                deck: [...wordPacks[selectedCategory]]
+                category: wordPacks[category] ? category : 'cosas',
+                deck: [...(wordPacks[category] || wordPacks['cosas'])],
+                gameActive: false,
+                impostorId: null,
+                timerInterval: null,
+                votes: {} // Para guardar quién vota a quién
             };
         }
         
         const room = rooms[roomCode];
-
-        // Evitar duplicados
         const existingPlayer = room.players.find(p => p.id === socket.id);
+        
         if (!existingPlayer) {
             room.players.push({ id: socket.id, name: username });
         }
-
-        // Enviamos la lista de jugadores Y la categoría actual de la sala
-        io.to(roomCode).emit('updatePlayerList', { 
-            players: room.players, 
-            category: room.category 
-        });
+        
+        io.to(roomCode).emit('updatePlayerList', { players: room.players, category: room.category });
     });
 
     socket.on('startGame', (roomCode) => {
         const room = rooms[roomCode];
-        if (!room || room.players.length < 3) return;
+        if (!room || room.players.length < 3 || room.gameActive) return;
 
-        const impostorIndex = Math.floor(Math.random() * room.players.length);
+        room.gameActive = true;
+        room.votes = {}; // Reiniciar votos
         
-        // Verificar mazo
-        if (room.deck.length === 0) {
-            room.deck = [...wordPacks[room.category]]; 
-        }
+        // 1. Elegir Impostor
+        const impostorIndex = Math.floor(Math.random() * room.players.length);
+        room.impostorId = room.players[impostorIndex].id;
 
-        const randomCardIndex = Math.floor(Math.random() * room.deck.length);
-        const secretWord = room.deck[randomCardIndex];
-        room.deck.splice(randomCardIndex, 1); 
+        // 2. Elegir Palabra (Sin repetir hasta agotar mazo)
+        if (room.deck.length === 0) room.deck = [...wordPacks[room.category]];
+        const cardIndex = Math.floor(Math.random() * room.deck.length);
+        const secretWord = room.deck[cardIndex];
+        room.deck.splice(cardIndex, 1);
 
-        // Mezclar orden
+        // 3. Orden de hablar
         let speakingOrder = [...room.players];
         for (let i = speakingOrder.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -153,31 +148,63 @@ io.on('connection', (socket) => {
         }
         const orderNames = speakingOrder.map(p => p.name);
 
-        room.players.forEach((player, index) => {
-            const isImpostor = (index === impostorIndex);
+        // 4. Enviar Roles
+        room.players.forEach((player) => {
+            const isImpostor = (player.id === room.impostorId);
             io.to(player.id).emit('gameStarted', {
                 role: isImpostor ? 'impostor' : 'crew',
                 word: isImpostor ? '???' : secretWord,
                 order: orderNames,
-                category: room.category // Para mostrar de qué tema estamos hablando
+                category: room.category
             });
         });
+
+        // 5. Iniciar Timer (300 segundos = 5 minutos)
+        let timeLeft = 300; 
+        io.to(roomCode).emit('timerUpdate', timeLeft);
+        
+        if(room.timerInterval) clearInterval(room.timerInterval);
+        
+        room.timerInterval = setInterval(() => {
+            timeLeft--;
+            if(timeLeft >= 0) {
+                io.to(roomCode).emit('timerUpdate', timeLeft);
+            } else {
+                startVotingPhase(roomCode);
+            }
+        }, 1000);
     });
 
-    // Manejo de desconexión (Limpieza)
+    // Forzar votación antes de tiempo
+    socket.on('forceVote', (roomCode) => {
+        startVotingPhase(roomCode);
+    });
+
+    // Recibir voto
+    socket.on('submitVote', ({ roomCode, targetId }) => {
+        const room = rooms[roomCode];
+        if(!room || !room.votingOpen) return;
+
+        // Guardar voto
+        room.votes[socket.id] = targetId;
+
+        // Comprobar si todos votaron
+        if(Object.keys(room.votes).length === room.players.length) {
+            calculateWinner(roomCode);
+        }
+    });
+
     socket.on('disconnect', () => {
         for (const roomCode in rooms) {
             const room = rooms[roomCode];
-            const playerIndex = room.players.findIndex(p => p.id === socket.id);
-            if (playerIndex !== -1) {
-                room.players.splice(playerIndex, 1);
+            const pIndex = room.players.findIndex(p => p.id === socket.id);
+            if (pIndex !== -1) {
+                room.players.splice(pIndex, 1);
                 if (room.players.length === 0) {
+                    if(room.timerInterval) clearInterval(room.timerInterval);
                     delete rooms[roomCode];
                 } else {
-                    io.to(roomCode).emit('updatePlayerList', { 
-                        players: room.players, 
-                        category: room.category 
-                    });
+                    io.to(roomCode).emit('updatePlayerList', { players: room.players, category: room.category });
                 }
                 break;
             }
@@ -185,7 +212,65 @@ io.on('connection', (socket) => {
     });
 });
 
+function startVotingPhase(roomCode) {
+    const room = rooms[roomCode];
+    if(!room) return;
+    
+    if(room.timerInterval) clearInterval(room.timerInterval);
+    room.votingOpen = true;
+    
+    // Enviar lista de jugadores para votar (id y nombre)
+    io.to(roomCode).emit('startVoting', room.players);
+}
+
+function calculateWinner(roomCode) {
+    const room = rooms[roomCode];
+    if(!room) return;
+
+    room.gameActive = false;
+    room.votingOpen = false;
+
+    // Contar votos
+    let voteCounts = {};
+    for(let voterId in room.votes) {
+        let target = room.votes[voterId];
+        voteCounts[target] = (voteCounts[target] || 0) + 1;
+    }
+
+    // Encontrar al más votado
+    let maxVotes = -1;
+    let mostVotedId = null;
+    
+    for(let targetId in voteCounts) {
+        if(voteCounts[targetId] > maxVotes) {
+            maxVotes = voteCounts[targetId];
+            mostVotedId = targetId;
+        }
+    }
+
+    // Lógica de victoria
+    let winner = '';
+    let message = '';
+    
+    if (mostVotedId === room.impostorId) {
+        winner = 'crew';
+        message = '¡El Impostor fue descubierto!';
+    } else {
+        winner = 'impostor';
+        message = '¡Se equivocaron! El Impostor ganó.';
+    }
+
+    // Revelar quién era
+    const impostorName = room.players.find(p => p.id === room.impostorId)?.name || 'Desconocido';
+
+    io.to(roomCode).emit('gameEnded', {
+        winner,
+        message,
+        impostorName
+    });
+}
+
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
-    console.log(`Servidor Multiverso listo en puerto ${PORT}`);
+    console.log(`Server v2.0 corriendo en puerto ${PORT}`);
 });
