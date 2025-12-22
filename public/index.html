@@ -2,204 +2,331 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Multiverso Impostor</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* ESTILOS GENERALES */
-        body { font-family: 'Segoe UI', sans-serif; background: #0e0e10; color: #fff; text-align: center; margin: 0; padding: 20px; min-height: 100vh; }
-        .hidden { display: none !important; }
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* CONTENEDOR PRINCIPAL */
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 60px; /* Espacio para que no choque con el copyright */ }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Respetar el Notch del iPhone */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            overflow-x: hidden;
+        }
 
-        /* GRID DE CATEGORÍAS */
-        .grid-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .container {
+            width: 100%;
+            max-width: 450px; /* Ancho máximo de celular */
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 25px;
+            background: -webkit-linear-gradient(45deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        h2 { font-weight: 600; font-size: 22px; margin-bottom: 15px; }
+
+        /* --- TARJETAS EFECTO CRISTAL (Glassmorphism) --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            margin-bottom: 20px;
+            animation: floatUp 0.5s ease-out;
+        }
+
+        @keyframes floatUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- GRID DE CATEGORÍAS --- */
+        .grid-menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
         
         .cat-card {
-            background: #1f1f23; border: 2px solid #333; border-radius: 12px; padding: 20px;
-            cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            border: 1px solid rgba(255,255,255,0.05);
         }
-        .cat-card:hover { transform: translateY(-5px); border-color: #a970ff; background: #26262c; }
-        .cat-icon { font-size: 40px; margin-bottom: 10px; }
-        .cat-title { font-weight: bold; font-size: 18px; text-transform: uppercase; }
+        .cat-card:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.15); }
+        .cat-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+        .cat-title { font-size: 14px; font-weight: 600; color: #ddd; }
 
-        /* INPUTS Y BOTONES */
-        .input-box { background: #18181b; padding: 30px; border-radius: 15px; border: 1px solid #333; margin-top: 20px; }
-        input { width: 90%; padding: 12px; margin: 10px 0; background: #0e0e10; border: 1px solid #333; color: white; border-radius: 6px; font-size: 16px; }
+        /* --- INPUTS ESTILO iOS --- */
+        input {
+            width: 100%;
+            padding: 16px;
+            margin: 10px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 16px; /* Evita zoom en iPhone */
+            outline: none;
+            transition: border 0.3s;
+        }
+        input:focus { border-color: #3a7bd5; background: rgba(0, 0, 0, 0.5); }
+
+        /* --- BOTONES GRANDES (Thumb Friendly) --- */
+        .btn-action {
+            width: 100%;
+            padding: 18px;
+            margin-top: 15px;
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            border: none;
+            font-weight: 700;
+            font-size: 17px;
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        .btn-action:active { transform: scale(0.96); }
         
-        .btn-action { width: 100%; padding: 15px; background: #9147ff; color: white; border: none; font-weight: bold; font-size: 16px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-        .btn-action:hover { background: #772ce8; }
-        .btn-secondary { background: #333; margin-top: 10px; }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #aaa;
+            margin-top: 10px;
+        }
 
-        /* JUEGO */
-        .role-impostor { color: #ff4f4d; text-shadow: 0 0 10px rgba(255, 79, 77, 0.4); font-size: 32px; font-weight: bold; }
-        .role-crew { color: #00f0a0; text-shadow: 0 0 10px rgba(0, 240, 160, 0.4); font-size: 32px; font-weight: bold; }
-        
-        ul { list-style: none; padding: 0; text-align: left; }
-        li { padding: 10px; border-bottom: 1px solid #333; }
+        /* --- LISTAS --- */
+        ul { list-style: none; padding: 0; margin: 0; }
+        li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            font-size: 17px;
+        }
+        li:last-child { border-bottom: none; }
 
-        /* --- NUEVO: ESTILO DEL COPYRIGHT CIRCULAR --- */
+        /* --- ROLES --- */
+        .role-impostor { 
+            color: #ff453a; /* Rojo iOS */
+            font-size: 36px; font-weight: 900; 
+            text-shadow: 0 0 20px rgba(255, 69, 58, 0.5);
+        }
+        .role-crew { 
+            color: #30d158; /* Verde iOS */
+            font-size: 36px; font-weight: 900; 
+            text-shadow: 0 0 20px rgba(48, 209, 88, 0.5);
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- COPYRIGHT CIRCULAR FLOTANTE --- */
         #copyright-badge {
-            position: fixed; /* Se queda fijo en la pantalla */
-            bottom: 20px;    /* Distancia desde abajo */
-            right: 20px;     /* Distancia desde la derecha */
-            
-            /* Forma circular y tamaño */
-            width: 60px;
-            height: 60px;
+            position: fixed;
+            bottom: max(20px, env(safe-area-inset-bottom)); /* Respeta el borde inferior del iPhone */
+            right: 20px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            
-            /* Colores y bordes (siguiendo el tema violeta) */
-            background: rgba(31, 31, 35, 0.9); /* Fondo oscuro semi-transparente */
-            border: 2px solid #9147ff;
-            color: #a970ff;
-            
-            /* Centrar el texto dentro del círculo */
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             justify-content: center;
             align-items: center;
             text-align: center;
-            
-            /* Tipografía pequeña */
-            font-size: 9px;
+            font-size: 8px;
             font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            line-height: 1.1;
-            
-            /* Un toque de estilo: rotación ligera y sombra */
-            transform: rotate(-10deg);
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 100;
+            pointer-events: none; /* Para que no moleste al tocar */
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            z-index: 9999; /* Asegura que siempre esté encima de todo */
-            cursor: default;
-            transition: 0.3s;
-        }
-        
-        /* Efecto al pasar el mouse por encima */
-        #copyright-badge:hover {
-             transform: rotate(0deg) scale(1.1);
-             background: #9147ff;
-             color: #fff;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>🕵️ ¿Quién es el Impostor?</h1>
+        <h1>🕵️ Multiverso</h1>
 
         <div id="screen-menu">
-            <h3>Elige una categoría</h3>
+            <h2 style="text-align:center; opacity:0.8;">Elige tu destino</h2>
             <div class="grid-menu">
                 <div class="cat-card" onclick="selectCategory('lol')">
-                    <div class="cat-icon">⚔️</div>
-                    <div class="cat-title">League of LoL</div>
+                    <span class="cat-icon">⚔️</span>
+                    <div class="cat-title">LoL</div>
                 </div>
                 <div class="cat-card" onclick="selectCategory('futbol')">
-                    <div class="cat-icon">⚽</div>
+                    <span class="cat-icon">⚽</span>
                     <div class="cat-title">Fútbol</div>
                 </div>
                 <div class="cat-card" onclick="selectCategory('comida')">
-                    <div class="cat-icon">🍕</div>
+                    <span class="cat-icon">🍕</span>
                     <div class="cat-title">Comida</div>
                 </div>
                 <div class="cat-card" onclick="selectCategory('paises')">
-                    <div class="cat-icon">🌍</div>
+                    <span class="cat-icon">🌍</span>
                     <div class="cat-title">Países</div>
                 </div>
                 <div class="cat-card" onclick="selectCategory('streamers')">
-                    <div class="cat-icon">📹</div>
+                    <span class="cat-icon">📹</span>
                     <div class="cat-title">Streamers</div>
                 </div>
                 <div class="cat-card" onclick="selectCategory('cosas')">
-                    <div class="cat-icon">📦</div>
-                    <div class="cat-title">Cosas Random</div>
+                    <span class="cat-icon">📦</span>
+                    <div class="cat-title">Random</div>
                 </div>
             </div>
         </div>
 
-        <div id="screen-login" class="input-box hidden">
-            <h2 id="selected-cat-title">MODO: ???</h2>
-            <input type="text" id="username" placeholder="Tu Apodo" maxlength="15">
-            <input type="text" id="room" placeholder="Código de Sala (ej: 1234)" maxlength="10">
-            <button class="btn-action" onclick="joinGame()">ENTRAR A LA SALA</button>
-            <button class="btn-action btn-secondary" onclick="goBack()">⬅ VOLVER</button>
+        <div id="screen-login" class="glass-panel hidden">
+            <h2 id="selected-cat-title" style="text-align: center; color: #3a7bd5;">MODO: ???</h2>
+            <p style="text-align:center; color:#888; margin-top:-10px; font-size:14px;">Ingresa tus datos de agente</p>
+            
+            <input type="text" id="username" placeholder="Tu Nombre" maxlength="12">
+            <input type="number" id="room" placeholder="Código Sala (Ej: 1234)" pattern="\d*">
+            
+            <button class="btn-action" onclick="joinGame()">Unirse</button>
+            <button class="btn-action btn-secondary" onclick="goBack()">Cancelar</button>
         </div>
 
-        <div id="screen-lobby" class="input-box hidden">
-            <h2>Sala: <span id="lobby-room-code" style="color:#a970ff"></span></h2>
-            <p>Categoría: <strong id="lobby-category">...</strong></p>
-            <p>Jugadores conectados:</p>
-            <ul id="player-list"></ul>
-            <div id="waiting-msg" style="color: #777;">Esperando más jugadores...</div>
-            <button id="start-btn" class="btn-action hidden" onclick="startGame()">COMENZAR PARTIDA</button>
+        <div id="screen-lobby" class="glass-panel hidden">
+            <div style="text-align: center;">
+                <p style="margin:0; color:#888; font-size:12px;">CÓDIGO DE SALA</p>
+                <h1 id="lobby-room-code" style="margin: 5px 0 20px 0; font-size: 40px; color:#fff;">----</h1>
+            </div>
+            
+            <p>Categoría: <strong id="lobby-category" style="color:#3a7bd5">...</strong></p>
+            
+            <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; max-height: 200px; overflow-y: auto;">
+                <ul id="player-list"></ul>
+            </div>
+
+            <div id="waiting-msg" style="text-align: center; padding: 20px; color: #888; font-style: italic;">
+                Esperando jugadores...<br>(Mínimo 3)
+            </div>
+            <button id="start-btn" class="btn-action hidden" onclick="startGame()">Comenzar Misión</button>
         </div>
 
-        <div id="screen-game" class="input-box hidden">
-            <h2 id="game-role-title"></h2>
-            <div id="game-word" style="font-size: 24px; margin: 20px 0;"></div>
-            <p style="font-style: italic; color: #888;">Orden para hablar:</p>
-            <ul id="speak-order"></ul>
-            <button class="btn-action btn-secondary" onclick="location.reload()">SALIR / NUEVA</button>
+        <div id="screen-game" class="glass-panel hidden" style="text-align: center;">
+            <p style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #888;">Identidad Secreta</p>
+            <h2 id="game-role-title" style="margin: 10px 0;"></h2>
+            
+            <div id="game-word-container" style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; margin: 20px 0; border: 1px dashed rgba(255,255,255,0.2);">
+                <div id="game-word" style="font-size: 28px; font-weight: bold;"></div>
+            </div>
+
+            <p style="text-align:left; color: #3a7bd5; font-weight: bold; margin-bottom: 10px;">Turnos para hablar:</p>
+            <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 0 15px;">
+                <ul id="speak-order"></ul>
+            </div>
+            
+            <button class="btn-action btn-secondary" onclick="location.reload()" style="margin-top: 30px;">Salir</button>
         </div>
     </div>
 
     <div id="copyright-badge">
-        Creado por<br>TU NOMBRE AQUÍ<br>© 2023
+        <div>
+            BY<br>NICO<br>MERLINI
+        </div>
     </div>
-
 
     <script>
         const socket = io();
         let selectedCategory = '';
         let myRoom = '';
 
-        // --- NAVEGACIÓN ---
         function selectCategory(cat) {
             selectedCategory = cat;
-            document.getElementById('screen-menu').classList.add('hidden');
-            document.getElementById('screen-login').classList.remove('hidden');
+            switchScreen('screen-login');
             document.getElementById('selected-cat-title').innerText = "MODO: " + cat.toUpperCase();
         }
 
         function goBack() {
-            document.getElementById('screen-login').classList.add('hidden');
-            document.getElementById('screen-menu').classList.remove('hidden');
+            switchScreen('screen-menu');
         }
 
-        // --- SOCKETS ---
+        function switchScreen(screenId) {
+            document.querySelectorAll('.container > div, .glass-panel').forEach(el => {
+                if(el.id !== 'copyright-badge') el.classList.add('hidden');
+            });
+            document.getElementById('screen-menu').classList.add('hidden'); // Asegurar ocultar menú
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
         function joinGame() {
             const name = document.getElementById('username').value.trim();
-            const room = document.getElementById('room').value.trim().toUpperCase();
+            const room = document.getElementById('room').value.trim();
 
-            if (!name || !room) return alert("¡Faltan datos!");
+            if (!name || !room) return alert("Completa los datos");
 
-            myRoom = room;
-            socket.emit('joinRoom', { roomCode: room, username: name, category: selectedCategory });
+            myRoom = room.toUpperCase();
+            socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory });
 
-            document.getElementById('screen-login').classList.add('hidden');
-            document.getElementById('screen-lobby').classList.remove('hidden');
-            document.getElementById('lobby-room-code').innerText = room;
+            switchScreen('screen-lobby');
+            document.getElementById('lobby-room-code').innerText = myRoom;
         }
 
         socket.on('updatePlayerList', (data) => {
             const players = data.players;
-            const currentCat = data.category;
-            document.getElementById('lobby-category').innerText = currentCat.toUpperCase();
+            document.getElementById('lobby-category').innerText = data.category.toUpperCase();
             
             const list = document.getElementById('player-list');
-            list.innerHTML = players.map(p => `<li>👤 ${p.name}</li>`).join('');
+            list.innerHTML = players.map(p => `<li><span style="margin-right:10px">👤</span> ${p.name}</li>`).join('');
 
             const btn = document.getElementById('start-btn');
             const msg = document.getElementById('waiting-msg');
             
             if (players.length >= 3) {
                 btn.classList.remove('hidden');
-                msg.classList.add('hidden');
+                msg.style.display = 'none';
             } else {
                 btn.classList.add('hidden');
-                msg.classList.remove('hidden');
+                msg.style.display = 'block';
             }
         });
 
@@ -208,25 +335,31 @@
         }
 
         socket.on('gameStarted', (data) => {
-            document.getElementById('screen-lobby').classList.add('hidden');
-            document.getElementById('screen-game').classList.remove('hidden');
+            switchScreen('screen-game');
 
             const roleTitle = document.getElementById('game-role-title');
             const wordDiv = document.getElementById('game-word');
 
             if (data.role === 'impostor') {
-                roleTitle.innerText = "🤫 ERES EL IMPOSTOR";
+                roleTitle.innerText = "IMPOSTOR";
                 roleTitle.className = "role-impostor";
-                wordDiv.innerText = "Tu objetivo: Fingir que sabes de qué hablan.";
+                wordDiv.innerText = "Múestrate confiado. Miente.";
+                wordDiv.style.color = "#ff453a";
             } else {
-                roleTitle.innerText = "ERES TRIPULANTE";
+                roleTitle.innerText = "TRIPULANTE";
                 roleTitle.className = "role-crew";
-                wordDiv.innerHTML = `La palabra secreta (${data.category}) es:<br><br><strong style="font-size:40px; color:#fff;">${data.word}</strong>`;
+                wordDiv.innerHTML = `${data.word}`;
+                wordDiv.style.color = "#fff";
             }
 
             const list = document.getElementById('speak-order');
-            list.innerHTML = data.order.map((name, i) => `<li>${i+1}. ${name}</li>`).join('');
+            list.innerHTML = data.order.map((name, i) => 
+                `<li><b style="color:#3a7bd5; margin-right:10px;">${i+1}.</b> ${name}</li>`
+            ).join('');
         });
+        
+        // Mostrar menú al inicio
+        document.getElementById('screen-menu').classList.remove('hidden');
     </script>
 </body>
 </html>
