@@ -7,11 +7,11 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         /* ESTILOS GENERALES */
-        body { font-family: 'Segoe UI', sans-serif; background: #0e0e10; color: #fff; text-align: center; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0e0e10; color: #fff; text-align: center; margin: 0; padding: 20px; min-height: 100vh; }
         .hidden { display: none !important; }
         
         /* CONTENEDOR PRINCIPAL */
-        .container { max-width: 600px; margin: 0 auto; }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 60px; /* Espacio para que no choque con el copyright */ }
 
         /* GRID DE CATEGORÍAS */
         .grid-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
@@ -38,6 +38,50 @@
         
         ul { list-style: none; padding: 0; text-align: left; }
         li { padding: 10px; border-bottom: 1px solid #333; }
+
+        /* --- NUEVO: ESTILO DEL COPYRIGHT CIRCULAR --- */
+        #copyright-badge {
+            position: fixed; /* Se queda fijo en la pantalla */
+            bottom: 20px;    /* Distancia desde abajo */
+            right: 20px;     /* Distancia desde la derecha */
+            
+            /* Forma circular y tamaño */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            
+            /* Colores y bordes (siguiendo el tema violeta) */
+            background: rgba(31, 31, 35, 0.9); /* Fondo oscuro semi-transparente */
+            border: 2px solid #9147ff;
+            color: #a970ff;
+            
+            /* Centrar el texto dentro del círculo */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            
+            /* Tipografía pequeña */
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.1;
+            
+            /* Un toque de estilo: rotación ligera y sombra */
+            transform: rotate(-10deg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 9999; /* Asegura que siempre esté encima de todo */
+            cursor: default;
+            transition: 0.3s;
+        }
+        
+        /* Efecto al pasar el mouse por encima */
+        #copyright-badge:hover {
+             transform: rotate(0deg) scale(1.1);
+             background: #9147ff;
+             color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -77,8 +121,8 @@
 
         <div id="screen-login" class="input-box hidden">
             <h2 id="selected-cat-title">MODO: ???</h2>
-            <input type="text" id="username" placeholder="Tu Apodo">
-            <input type="text" id="room" placeholder="Código de Sala (ej: 1234)">
+            <input type="text" id="username" placeholder="Tu Apodo" maxlength="15">
+            <input type="text" id="room" placeholder="Código de Sala (ej: 1234)" maxlength="10">
             <button class="btn-action" onclick="joinGame()">ENTRAR A LA SALA</button>
             <button class="btn-action btn-secondary" onclick="goBack()">⬅ VOLVER</button>
         </div>
@@ -100,6 +144,11 @@
             <button class="btn-action btn-secondary" onclick="location.reload()">SALIR / NUEVA</button>
         </div>
     </div>
+
+    <div id="copyright-badge">
+        Creado por<br>TU NOMBRE AQUÍ<br>© 2023
+    </div>
+
 
     <script>
         const socket = io();
@@ -127,7 +176,6 @@
             if (!name || !room) return alert("¡Faltan datos!");
 
             myRoom = room;
-            // Enviamos también la categoría seleccionada
             socket.emit('joinRoom', { roomCode: room, username: name, category: selectedCategory });
 
             document.getElementById('screen-login').classList.add('hidden');
@@ -136,10 +184,8 @@
         }
 
         socket.on('updatePlayerList', (data) => {
-            // data ahora trae { players: [], category: '...' }
             const players = data.players;
             const currentCat = data.category;
-
             document.getElementById('lobby-category').innerText = currentCat.toUpperCase();
             
             const list = document.getElementById('player-list');
