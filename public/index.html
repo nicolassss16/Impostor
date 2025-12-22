@@ -8,13 +8,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title> Impostor | </title>
+    <title>Impostor | Multiverso</title>
     
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
         /* -----------------------------------------------------------
-           1. VARIABLES & RESET (Design Tokens)
+           1. VARIABLES & RESET
            ----------------------------------------------------------- */
         :root {
             --color-bg-start: #0f0c29;
@@ -25,6 +25,7 @@
             --color-text-secondary: #a0a0a0;
             --color-accent: #3a7bd5;
             --color-accent-gradient: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+            --color-danger-gradient: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
             
             --color-impostor: #ff453a;
             --color-crew: #30d158;
@@ -41,10 +42,7 @@
             --safe-area-bottom: env(safe-area-inset-bottom);
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: var(--font-family-base);
@@ -52,11 +50,8 @@
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
             color: var(--color-text-primary);
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
+            margin: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow-x: hidden;
             padding-top: var(--safe-area-top);
             padding-bottom: var(--safe-area-bottom);
         }
@@ -71,210 +66,87 @@
            2. TYPOGRAPHY & UTILITIES
            ----------------------------------------------------------- */
         h1, h2, h3 { margin: 0; line-height: 1.2; }
-        
-        .sr-only { /* Accesibilidad: oculta visualmente pero no para lectores */
-            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-        }
-
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
         .hidden { display: none !important; }
 
         /* -----------------------------------------------------------
-           3. LAYOUT STRUCTURE
+           3. LAYOUT
            ----------------------------------------------------------- */
-        .app-header {
-            padding: 20px;
-            text-align: center;
-            z-index: 10;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            text-transform: uppercase;
-            background: var(--color-accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .app-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 0 20px 80px 20px; /* Padding bottom para el footer fijo */
-            position: relative;
-        }
+        .app-header { padding: 20px; text-align: center; z-index: 10; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; background: var(--color-accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .app-main { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 480px; margin: 0 auto; padding: 0 20px 80px 20px; position: relative; }
 
         /* -----------------------------------------------------------
            4. COMPONENTS
            ----------------------------------------------------------- */
-        
-        /* Glassmorphism Card Wrapper */
         .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            -webkit-backdrop-filter: blur(var(--glass-blur));
-            border: 1px solid var(--glass-border);
-            border-radius: var(--border-radius-lg);
-            padding: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border); border-radius: var(--border-radius-lg); padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Category Grid (Services) */
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
+        /* Grid */
+        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
         .card-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--border-radius-md);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--color-text-primary);
-            text-decoration: none;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md);
+            padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease; color: var(--color-text-primary); text-decoration: none;
         }
-
-        .card-btn:hover, .card-btn:focus-visible {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-            outline: 2px solid var(--color-accent);
-            outline-offset: 2px;
-        }
-
+        .card-btn:active { background: rgba(255, 255, 255, 0.15); transform: scale(0.98); }
         .card-icon { font-size: 32px; margin-bottom: 8px; display: block; }
         .card-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Forms */
+        /* Inputs & Buttons */
         .form-group { margin-bottom: 16px; width: 100%; }
-        
         .input-field {
-            width: 100%;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--glass-border);
-            border-radius: 14px;
-            color: #fff;
-            font-size: 16px; /* Previene zoom en iOS */
-            transition: border-color 0.3s;
+            width: 100%; padding: 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border);
+            border-radius: 14px; color: #fff; font-size: 16px; transition: border-color 0.3s;
         }
-
-        .input-field:focus {
-            outline: none;
-            border-color: var(--color-accent);
-            background: rgba(0, 0, 0, 0.5);
-        }
+        .input-field:focus { outline: none; border-color: var(--color-accent); background: rgba(0, 0, 0, 0.5); }
 
         .btn-primary {
-            width: 100%;
-            padding: 18px;
-            background: var(--color-accent-gradient);
-            color: white;
-            border: none;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(58, 123, 213, 0.3);
-            transition: transform 0.1s;
+            width: 100%; padding: 18px; background: var(--color-accent-gradient); color: white; border: none;
+            border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(58, 123, 213, 0.3);
+            transition: transform 0.1s; margin-top: 10px;
         }
-
         .btn-primary:active { transform: scale(0.97); }
-        
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.3);
-            color: var(--color-text-secondary);
-            margin-top: 12px;
-        }
+        .btn-secondary { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--color-text-secondary); box-shadow: none; }
+        .btn-danger { background: var(--color-danger-gradient); box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3); }
 
-        /* Player List */
-        .player-list {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-            max-height: 250px;
-            overflow-y: auto;
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
-        }
-
-        .player-item {
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-        }
-        
+        /* Lists */
+        .player-list { list-style: none; padding: 0; margin: 20px 0; max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; }
+        .player-item { padding: 14px 20px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; }
         .player-item:last-child { border-bottom: none; }
 
-        /* Game Roles */
-        .role-display { text-align: center; margin: 20px 0; }
-        
+        /* Game Elements */
         .text-impostor { color: var(--color-impostor); text-shadow: 0 0 15px rgba(255, 69, 58, 0.4); }
         .text-crew { color: var(--color-crew); text-shadow: 0 0 15px rgba(48, 209, 88, 0.4); }
-
-        /* -----------------------------------------------------------
-           5. FOOTER (Circular Badge)
-           ----------------------------------------------------------- */
-        .app-footer {
-            position: fixed;
-            bottom: max(20px, var(--safe-area-bottom));
-            right: 20px;
-            z-index: 100;
+        
+        /* Timer & Voting */
+        .timer-display {
+            font-size: 2.5rem; font-weight: 700; text-align: center; margin: 10px 0;
+            font-variant-numeric: tabular-nums; letter-spacing: 2px; color: #ffd700;
         }
+        
+        .vote-item {
+            padding: 16px; margin-bottom: 8px; background: rgba(255,255,255,0.1); border-radius: 12px;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            border: 2px solid transparent; transition: all 0.2s;
+        }
+        .vote-item.selected { border-color: var(--color-accent); background: rgba(58, 123, 213, 0.2); }
+        .vote-item:active { transform: scale(0.98); }
 
+        /* Footer */
+        .app-footer { position: fixed; bottom: max(20px, var(--safe-area-bottom)); right: 20px; z-index: 100; }
         .copyright-badge {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(15, 12, 41, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            color: var(--color-text-secondary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 8px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            transition: transform 0.3s ease, border-color 0.3s;
-            text-decoration: none;
+            width: 60px; height: 60px; border-radius: 50%; background: rgba(15, 12, 41, 0.8); backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border); color: var(--color-text-secondary); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; font-size: 8px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-decoration: none;
         }
 
-        .copyright-badge:hover {
-            transform: rotate(10deg) scale(1.1);
-            border-color: var(--color-accent);
-            color: #fff;
-        }
-
-        /* Responsive */
-        @media (min-width: 768px) {
-            .app-main { max-width: 600px; }
-            .category-grid { grid-template-columns: repeat(3, 1fr); }
-        }
+        @media (min-width: 768px) { .app-main { max-width: 600px; } .category-grid { grid-template-columns: repeat(3, 1fr); } }
     </style>
 </head>
 <body>
@@ -291,47 +163,35 @@
             </header>
             
             <nav class="category-grid" role="menu">
-                <button onclick="selectCategory('lol')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">⚔️</span>
-                    <span class="card-title">LoL</span>
+                <button onclick="selectCategory('lol')" class="card-btn">
+                    <span class="card-icon">⚔️</span><span class="card-title">LoL</span>
                 </button>
-                <button onclick="selectCategory('futbol')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">⚽</span>
-                    <span class="card-title">Fútbol</span>
+                <button onclick="selectCategory('futbol')" class="card-btn">
+                    <span class="card-icon">⚽</span><span class="card-title">Fútbol</span>
                 </button>
-                <button onclick="selectCategory('comida')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">🍕</span>
-                    <span class="card-title">Comida</span>
+                <button onclick="selectCategory('comida')" class="card-btn">
+                    <span class="card-icon">🍕</span><span class="card-title">Comida</span>
                 </button>
-                <button onclick="selectCategory('paises')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">🌍</span>
-                    <span class="card-title">Países</span>
+                <button onclick="selectCategory('paises')" class="card-btn">
+                    <span class="card-icon">🌍</span><span class="card-title">Países</span>
                 </button>
-                
-                <button onclick="selectCategory('streamers')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">📹</span>
-                    <span class="card-title">Streamers</span>
+                <button onclick="selectCategory('streamers')" class="card-btn">
+                    <span class="card-icon">📹</span><span class="card-title">Streamers</span>
                 </button>
-                <button onclick="selectCategory('cine')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">🎬</span>
-                    <span class="card-title">Cine/Series</span>
+                <button onclick="selectCategory('cine')" class="card-btn">
+                    <span class="card-icon">🎬</span><span class="card-title">Cine</span>
                 </button>
-
-                <button onclick="selectCategory('marcas')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">🏷️</span>
-                    <span class="card-title">Marcas</span>
+                <button onclick="selectCategory('marcas')" class="card-btn">
+                    <span class="card-icon">🏷️</span><span class="card-title">Marcas</span>
                 </button>
-                <button onclick="selectCategory('lugares')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">📍</span>
-                    <span class="card-title">Lugares</span>
+                <button onclick="selectCategory('lugares')" class="card-btn">
+                    <span class="card-icon">📍</span><span class="card-title">Lugares</span>
                 </button>
-                <button onclick="selectCategory('animales')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">🦁</span>
-                    <span class="card-title">Animales</span>
+                <button onclick="selectCategory('animales')" class="card-btn">
+                    <span class="card-icon">🦁</span><span class="card-title">Animales</span>
                 </button>
-                <button onclick="selectCategory('cosas')" class="card-btn" role="menuitem">
-                    <span class="card-icon" aria-hidden="true">📦</span>
-                    <span class="card-title">Random</span>
+                <button onclick="selectCategory('cosas')" class="card-btn">
+                    <span class="card-icon">📦</span><span class="card-title">Random</span>
                 </button>
             </nav>
         </section>
@@ -339,20 +199,18 @@
         <section id="view-login" aria-labelledby="login-heading" class="glass-panel hidden">
             <header style="text-align: center; margin-bottom: 20px;">
                 <h2 id="login-heading" style="color: var(--color-accent);">Identificación</h2>
-                <p style="color: var(--color-text-secondary); font-size: 0.9rem;">Ingresa tus credenciales de agente</p>
+                <p style="color: var(--color-text-secondary); font-size: 0.9rem;">Ingresa tus credenciales</p>
             </header>
 
             <form onsubmit="event.preventDefault(); joinGame();">
                 <div class="form-group">
-                    <label for="username" class="sr-only">Nombre de usuario</label>
+                    <label for="username" class="sr-only">Nombre</label>
                     <input type="text" id="username" class="input-field" placeholder="Tu Nombre de Agente" maxlength="12" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="room" class="sr-only">Código de Sala</label>
+                    <label for="room" class="sr-only">Sala</label>
                     <input type="number" id="room" class="input-field" placeholder="Código de Sala (Ej: 1234)" pattern="\d*" required>
                 </div>
-
                 <button type="submit" class="btn-primary">Ingresar a la Sala</button>
                 <button type="button" class="btn-primary btn-secondary" onclick="navigate('view-menu')">Cancelar</button>
             </form>
@@ -366,8 +224,7 @@
             </header>
 
             <div aria-live="polite">
-                <ul id="player-list" class="player-list">
-                    </ul>
+                <ul id="player-list" class="player-list"></ul>
             </div>
 
             <div id="waiting-msg" style="text-align: center; color: var(--color-text-secondary); margin-bottom: 20px;">
@@ -379,30 +236,52 @@
         </section>
 
         <section id="view-game" aria-labelledby="game-heading" class="glass-panel hidden">
+            <div id="timer-display" class="timer-display">05:00</div>
+            
             <header style="text-align: center;">
                 <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-secondary);">Tu Identidad</p>
                 <h2 id="game-role-title" style="font-size: 2rem; font-weight: 800;"></h2>
             </header>
 
-            <article class="role-display" style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; border: 1px dashed var(--glass-border);">
+            <article class="role-display" style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; border: 1px dashed var(--glass-border); margin-top: 20px;">
                 <div id="game-word" style="font-size: 1.5rem; font-weight: bold;"></div>
             </article>
 
             <div style="margin-top: 20px;">
-                <h3 style="font-size: 1rem; color: var(--color-accent); margin-bottom: 10px;">Orden de interrogatorio:</h3>
-                <ul id="speak-order" class="player-list" style="max-height: 200px;"></ul>
+                <h3 style="font-size: 1rem; color: var(--color-accent); margin-bottom: 10px;">Orden sugerido:</h3>
+                <ul id="speak-order" class="player-list" style="max-height: 150px;"></ul>
             </div>
 
-            <button class="btn-primary btn-secondary" onclick="location.reload()" style="margin-top: 20px;">Abandonar Misión</button>
+            <button class="btn-primary btn-danger" onclick="forceVote()">🚨 VOTAR AHORA</button>
+        </section>
+
+        <section id="view-voting" class="glass-panel hidden">
+            <header style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: var(--color-impostor);">¡ALARMA!</h2>
+                <p style="color: #fff;">¿Quién es el traidor?</p>
+            </header>
+            
+            <div id="voting-list">
+                </div>
+        </section>
+
+        <section id="view-result" class="glass-panel hidden" style="text-align: center;">
+            <h2 id="result-title" style="font-size: 2rem; margin-bottom: 10px;"></h2>
+            <p id="result-msg" style="font-size: 1.2rem; color: #ddd; margin-bottom: 30px;"></p>
+            
+            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; margin-bottom: 30px;">
+                <span style="display:block; font-size: 0.8rem; color: #aaa; text-transform: uppercase;">El Impostor era</span>
+                <strong id="impostor-reveal" style="font-size: 1.8rem; color: var(--color-impostor);"></strong>
+            </div>
+
+            <button class="btn-primary" onclick="location.reload()">Nueva Misión</button>
         </section>
 
     </main>
 
     <footer class="app-footer">
-        <a href="#" class="copyright-badge" aria-label="Créditos del desarrollador">
-            <span>Dev</span>
-            <span style="font-size: 10px; margin: 2px 0;">NICO</span>
-            <span>2025</span>
+        <a href="#" class="copyright-badge">
+            <span>Dev</span><span style="font-size: 10px; margin: 2px 0;">NICO</span><span>2025</span>
         </a>
     </footer>
 
@@ -411,84 +290,48 @@
         let selectedCategory = '';
         let myRoom = '';
 
-        // --- NAVIGATION STATE MANAGER ---
+        // --- NAVEGACIÓN ---
         function navigate(viewId) {
-            // Ocultar todas las secciones directas del main
             document.querySelectorAll('main > section').forEach(el => {
                 el.classList.add('hidden');
                 el.setAttribute('aria-hidden', 'true');
             });
-            
-            // Mostrar la deseada
             const target = document.getElementById(viewId);
             target.classList.remove('hidden');
             target.setAttribute('aria-hidden', 'false');
-            
-            // Gestión de foco para accesibilidad
-            const firstInput = target.querySelector('input, button');
-            if (firstInput) firstInput.focus();
         }
 
         function selectCategory(cat) {
             selectedCategory = cat;
             navigate('view-login');
-            // Actualizamos el texto visualmente
-            const title = document.getElementById('login-heading');
-            title.innerHTML = `Misión: ${cat.toUpperCase()}`;
+            document.getElementById('login-heading').innerHTML = `Misión: ${cat.toUpperCase()}`;
         }
 
-        // --- SOCKET ACTIONS ---
+        // --- SOCKETS ---
         function joinGame() {
-            const nameInput = document.getElementById('username');
-            const roomInput = document.getElementById('room');
-            
-            const name = nameInput.value.trim();
-            const room = roomInput.value.trim();
-
-            if (!name || !room) {
-                // Feedback visual simple si falla
-                nameInput.style.borderColor = '#ff453a';
-                return;
-            }
-
+            const name = document.getElementById('username').value.trim();
+            const room = document.getElementById('room').value.trim();
+            if (!name || !room) return alert("Faltan datos");
             myRoom = room.toUpperCase();
             
-            // Emitir evento al servidor
-            socket.emit('joinRoom', { 
-                roomCode: myRoom, 
-                username: name, 
-                category: selectedCategory 
-            });
-
-            // UI Update
+            socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory });
             navigate('view-lobby');
             document.getElementById('lobby-room-code').innerText = myRoom;
         }
 
-        function startGame() {
-            socket.emit('startGame', myRoom);
-        }
+        function startGame() { socket.emit('startGame', myRoom); }
 
-        // --- SOCKET LISTENERS ---
         socket.on('updatePlayerList', (data) => {
             const { players, category } = data;
-            
-            // Actualizar info de sala
             document.getElementById('lobby-category-display').innerText = category;
             
-            // Renderizar lista accesible
             const list = document.getElementById('player-list');
             list.innerHTML = players.map(p => `
-                <li class="player-item">
-                    <span role="img" aria-label="Jugador" style="margin-right: 10px;">👤</span>
-                    <span>${p.name}</span>
-                </li>
+                <li class="player-item"><span style="margin-right:10px;">👤</span>${p.name}</li>
             `).join('');
 
-            // Lógica de estado del juego
             const btn = document.getElementById('start-btn');
             const msg = document.getElementById('waiting-msg');
-            
             if (players.length >= 3) {
                 btn.classList.remove('hidden');
                 msg.classList.add('hidden');
@@ -498,29 +341,76 @@
             }
         });
 
+        // --- JUEGO ---
         socket.on('gameStarted', (data) => {
             navigate('view-game');
-
             const roleTitle = document.getElementById('game-role-title');
             const wordDiv = document.getElementById('game-word');
 
             if (data.role === 'impostor') {
                 roleTitle.innerText = "IMPOSTOR";
                 roleTitle.className = "text-impostor";
-                wordDiv.innerText = "🤫 Tu objetivo: Engañar a la tripulación.";
+                wordDiv.innerText = "🤫 Tu objetivo: Engañar a todos.";
             } else {
                 roleTitle.innerText = "TRIPULANTE";
                 roleTitle.className = "text-crew";
-                wordDiv.innerHTML = `Palabra clave: <br><span style="color:#fff; font-size: 2rem;">${data.word}</span>`;
+                wordDiv.innerHTML = `Clave: <br><span style="color:#fff;">${data.word}</span>`;
             }
 
-            const list = document.getElementById('speak-order');
-            list.innerHTML = data.order.map((name, i) => `
+            document.getElementById('speak-order').innerHTML = data.order.map((name, i) => `
                 <li class="player-item">
-                    <strong style="color:var(--color-accent); margin-right:12px;">${i+1}.</strong>
-                    ${name}
+                    <strong style="color:var(--color-accent); margin-right:10px;">${i+1}.</strong> ${name}
                 </li>
             `).join('');
+        });
+
+        // --- TIMER ---
+        socket.on('timerUpdate', (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            document.getElementById('timer-display').innerText = 
+                `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        });
+
+        // --- VOTACIÓN ---
+        function forceVote() { socket.emit('forceVote', myRoom); }
+
+        socket.on('startVoting', (players) => {
+            navigate('view-voting');
+            const container = document.getElementById('voting-list');
+            container.innerHTML = players.map(p => `
+                <div class="vote-item" onclick="submitVote(this, '${p.id}')">
+                    <span style="font-weight:600; font-size:1.1rem;">👤 ${p.name}</span>
+                    <span style="font-size:0.8rem; color:#aaa;">Tocar para acusar</span>
+                </div>
+            `).join('');
+        });
+
+        function submitVote(element, targetId) {
+            // Estilo visual de selección
+            document.querySelectorAll('.vote-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            element.style.pointerEvents = 'none'; // Bloquear revoto
+            element.querySelector('span:last-child').innerText = "✅ VOTO ENVIADO";
+            
+            socket.emit('submitVote', { roomCode: myRoom, targetId: targetId });
+        }
+
+        // --- RESULTADOS ---
+        socket.on('gameEnded', (data) => {
+            navigate('view-result');
+            const title = document.getElementById('result-title');
+            
+            if(data.winner === 'crew') {
+                title.innerHTML = "🏆 GANAN TRIPULANTES";
+                title.className = "text-crew";
+            } else {
+                title.innerHTML = "🔪 GANA IMPOSTOR";
+                title.className = "text-impostor";
+            }
+            
+            document.getElementById('result-msg').innerText = data.message;
+            document.getElementById('impostor-reveal').innerText = data.impostorName;
         });
     </script>
 </body>
