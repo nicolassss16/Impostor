@@ -8,30 +8,41 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // --- CONFIGURACIÓN DE CATEGORÍAS ---
 // --- CONFIGURACIÓN DE CATEGORÍAS (MODO BESTIA) ---
+// --- CONFIGURACIÓN DE CATEGORÍAS (CORREGIDO: SOLO PERSONAJES) ---
 const wordPacks = {
     lol: [
-        "Teemo", "Yasuo", "Faker", "Baron Nashor", "Flash", "Grieta del Invocador",
-        "Lux", "Darius", "Poro", "Nexo", "Ward", "Garen", "Thresh", "Lee Sin", 
-        "Smite", "Jinx", "Arcane", "Toplane", "Jungla", "Midlane", "ADC", "Support",
-        "Skin Legendaria", "Pentakill", "Surrender at 15", "T1", "Worlds", 
-        "Blitzcrank", "Shaco", "Yuumi", "Riot Games", "Lag", "Katarina", "Zed",
-        "Ahri", "Vayne", "Maestría 7", "Report", "Trollear", "AFK", "Parche", "Nerf"
+        // SOLO CAMPEONES
+        "Teemo", "Yasuo", "Yone", "Zed", "Katarina", "Akali", "Ahri", "Lux", 
+        "Garen", "Darius", "Mordekaiser", "Sett", "Lee Sin", "Master Yi", "Viego", 
+        "Kayn", "Jinx", "Caitlyn", "Ezreal", "Jhin", "Miss Fortune", "Vayne", 
+        "Kai'Sa", "Thresh", "Blitzcrank", "Nautilus", "Pyke", "Leona", "Morgana", 
+        "Lulu", "Yuumi", "Soraka", "Sona", "Seraphine", "Ekko", "Sylas", 
+        "Irelia", "Riven", "Fiora", "Camille", "Jax", "Tryndamere", "Nasus", 
+        "Renekton", "Aatrox", "Urgot", "Sion", "Ornn", "Malphite", "Cho'Gath", 
+        "Warwick", "Volibear", "Fiddlesticks", "Shaco", "Evelynn", "Kha'Zix", 
+        "Rengar", "Graves", "Kindred", "Heimerdinger", "Veigar", "Syndra", 
+        "Orianna", "Viktor", "Azir", "Twisted Fate", "Draven", "Samira", "Lucian"
     ],
     futbol: [
-        "Messi", "Cristiano Ronaldo", "Maradona", "Pelé", "Mbappé", "La Bombonera",
-        "Monumental", "Mundial", "VAR", "Penal", "Tarjeta Roja", "Dibu Martínez",
-        "Scaloneta", "Julián Álvarez", "Boca Juniors", "River Plate", "Independiente",
-        "Racing", "San Lorenzo", "La 12", "Copa Libertadores", "Champions League", 
-        "Haaland", "Kun Agüero", "Arbitro", "Offside", "Pelota", "Botines", "Arco", 
-        "Corner", "DT", "Hincha", "Barrabrava", "Superclásico", "Gol de Oro"
+        // SOLO JUGADORES
+        "Lionel Messi", "Cristiano Ronaldo", "Kylian Mbappé", "Erling Haaland", 
+        "Neymar Jr", "Vinícius Jr", "Julián Álvarez", "Dibu Martínez", "Enzo Fernández", 
+        "Alexis Mac Allister", "Rodrigo De Paul", "Ángel Di María", "Lautaro Martínez", 
+        "Cuti Romero", "Otamendi", "Paulo Dybala", "Lewandowski", "Karim Benzema", 
+        "Luka Modrić", "Kevin De Bruyne", "Mohamed Salah", "Harry Kane", "Jude Bellingham", 
+        "Antoine Griezmann", "Thibaut Courtois", "Ter Stegen", "Virgil van Dijk", 
+        "Sergio Ramos", "Luis Suárez", "Edinson Cavani", "Diego Maradona", "Pelé", 
+        "Ronaldinho", "Zinedine Zidane", "Riquelme", "Kun Agüero", "Carlos Tevez", 
+        "Zlatan Ibrahimović", "Gareth Bale", "Andrés Iniesta", "Xavi Hernández"
     ],
     comida: [
+        // SOLO COMIDA (Esto ya te había gustado)
         "Pizza", "Hamburguesa", "Sushi", "Asado", "Empanadas", "Helado",
         "Chocolate", "Tacos", "Ensalada", "Milanesa con Puré", "Pancho", "Mate",
-        "Fernet con Coca", "Dulce de Leche", "Alfajor", "Choripán", "Polenta", 
+        "Fernet", "Dulce de Leche", "Alfajor", "Choripán", "Polenta", 
         "Guiso de Lentejas", "Vitel Toné", "Mandarina", "Café", "Tostado",
         "Ñoquis", "Flan con Crema", "Tortilla de Papas", "Facturas", "Chipá",
-        "Coca Cola", "Cerveza", "Papas Fritas", "Fideos con Tuco", "Sanguche de Miga"
+        "Papas Fritas", "Fideos con Tuco", "Sanguche de Miga", "Ravioles", "Locro"
     ],
     paises: [
         "Argentina", "Brasil", "España", "Japón", "Estados Unidos", "Francia",
@@ -40,21 +51,15 @@ const wordPacks = {
         "Canadá", "India", "Sudáfrica", "Ucrania", "Portugal", "Suiza", "Grecia"
     ],
     streamers: [
+        // SOLO PERSONAS
         "Ibai", "AuronPlay", "Rubius", "Spreen", "Davoo Xeneize", "Coscu",
         "Momo", "Kun Agüero", "TheGrefg", "ElMariana", "Rivers", "Bananirou",
         "Unicornio", "Mazzat", "Luquitas Rodriguez", "Hasbulla", "MrBeast", 
         "Vegetta777", "Willyrex", "Frankkaster", "La Cobra", "Gastón Edul",
-        "Carrera", "Robleis", "Markito Navaja", "Pellah", "Santutu"
-    ],
-    cosas: [
-        "Silla Gamer", "Mesa", "PC Gamer", "iPhone", "Cama", "Inodoro",
-        "Papel Higiénico", "Espejo", "Ventana", "Puerta", "Televisor",
-        "Auriculares", "Mouse", "Teclado Mecánico", "Zapatillas", "Billetera",
-        "Dólar Blue", "Sube", "Llaves", "Mochila", "Aire Acondicionado", 
-        "Ventilador", "Microondas", "Heladera", "Guitarra", "Pelota de Tenis",
-        "Cargador", "Control Remoto", "Marrón (Color)", "Agua", "Fuego"
+        "Carrera", "Robleis", "Markito Navaja", "Pellah", "Santutu", "Momo"
     ],
     cine: [
+        // PELICULAS Y SERIES
         "Harry Potter", "Star Wars", "El Señor de los Anillos", "Avengers", "Spiderman",
         "Batman", "Joker", "Titanic", "Shrek", "Toy Story", "Los Simpsons",
         "Breaking Bad", "Game of Thrones", "El Juego del Calamar", "Casados con Hijos",
@@ -79,6 +84,13 @@ const wordPacks = {
         "Plaza", "Playa", "Montaña", "Cine", "Shopping", "Gimnasio",
         "Boliche", "Estadio de Fútbol", "Aeropuerto", "Baño", "Cocina",
         "Cementerio", "Iglesia", "McDonalds", "Cárcel", "Zoologico"
+    ],
+    cosas: [
+        "Silla Gamer", "Mesa", "PC Gamer", "iPhone", "Cama", "Inodoro",
+        "Papel Higiénico", "Espejo", "Ventana", "Puerta", "Televisor",
+        "Auriculares", "Mouse", "Teclado Mecánico", "Zapatillas", "Billetera",
+        "Dólar Blue", "Sube", "Llaves", "Mochila", "Aire Acondicionado", 
+        "Ventilador", "Microondas", "Heladera", "Guitarra", "Pelota de Tenis"
     ]
 };
 
