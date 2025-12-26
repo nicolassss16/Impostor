@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Impostor | Neon Edition</title>
+    <title>Impostor | Multiverso</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,16 +13,15 @@
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
-        /* --- ESTILOS NEON CYBERPUNK --- */
+        /* --- ESTILOS OPTIMIZADOS (ZERO LAG) --- */
         :root {
             --bg-dark: #09090b;
-            --primary: #8b5cf6; /* Violeta */
-            --primary-glow: rgba(139, 92, 246, 0.5);
-            --accent: #06b6d4; /* Cyan */
-            --danger: #ef4444; /* Rojo */
-            --success: #10b981; /* Verde */
-            --glass: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1);
+            --panel-bg: #18181b; 
+            --primary: #8b5cf6;
+            --accent: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border: #27272a;
             --font-main: 'Montserrat', sans-serif;
             --font-head: 'Russo One', sans-serif;
         }
@@ -32,195 +31,132 @@
         body {
             font-family: var(--font-main);
             background-color: var(--bg-dark);
+            /* Fondo estático para rendimiento máximo */
+            background-image: radial-gradient(circle at 50% 0%, #2e1065 0%, #000 70%);
             color: #fff; margin: 0; min-height: 100vh;
             display: flex; flex-direction: column; align-items: center;
             padding: 20px; padding-bottom: 90px;
             overflow-x: hidden;
-            position: relative;
-        }
-
-        /* FONDO ANIMADO DE MANCHAS (MESH GRADIENT) */
-        .background-fx {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            background: 
-                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%), 
-                radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%);
-            filter: blur(40px);
-            animation: pulseBg 10s ease-in-out infinite alternate;
-        }
-        @keyframes pulseBg {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.2); }
         }
 
         .container { width: 100%; max-width: 450px; position: relative; z-index: 10; }
         
-        /* LOGO CON EFECTO GLITCH */
         h1 {
             font-family: var(--font-head);
             text-align: center; text-transform: uppercase; letter-spacing: 2px;
-            font-size: 2.5rem; margin-bottom: 30px;
-            background: linear-gradient(to right, #fff, #a5f3fc);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px var(--primary-glow);
+            font-size: 2.2rem; margin-bottom: 20px; color: #fff;
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
         }
 
-        /* TARJETAS PREMIUM */
+        /* PANELES SÓLIDOS (Rápidos) */
         .glass-panel {
-            background: var(--glass); 
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border); 
-            border-top: 1px solid rgba(255,255,255,0.15); /* Brillo superior */
-            border-radius: 30px; padding: 25px;
-            box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5);
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px; padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease-out; 
+            transform: translateZ(0); 
         }
 
-        /* GRID DEL MENU */
-        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         
         .menu-card {
-            background: rgba(30, 30, 35, 0.6);
+            background: #27272a;
             border: 1px solid var(--border);
-            border-radius: 20px; padding: 20px; 
+            border-radius: 16px; padding: 15px; 
             cursor: pointer; text-align: center;
-            transition: 0.3s;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 110px; position: relative; overflow: hidden;
+            height: 90px; transition: transform 0.1s;
         }
-        /* Efecto de brillo al tocar */
-        .menu-card::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
-            transform: translateX(-100%); transition: 0.5s;
-        }
-        .menu-card:hover::after { transform: translateX(100%); }
-        .menu-card:active { transform: scale(0.95); border-color: var(--primary); }
-        
-        .menu-card i { margin-bottom: 10px; color: var(--accent); transition: 0.3s; }
-        .menu-card:hover i { transform: scale(1.2); text-shadow: 0 0 10px var(--accent); }
-        .menu-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ccc; }
+        .menu-card:active { background: #3f3f46; transform: scale(0.96); }
+        .menu-card i { margin-bottom: 8px; color: var(--accent); }
+        .menu-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #ccc; }
 
-        /* INPUTS ESTILO IOS/NEON */
         input {
-            width: 100%; padding: 18px; margin-bottom: 15px;
-            background: rgba(0,0,0,0.3); border: 2px solid var(--border); border-radius: 18px;
-            color: white; font-size: 16px; font-family: var(--font-main); outline: none;
-            transition: 0.3s; text-align: center; font-weight: 600;
+            width: 100%; padding: 15px; margin-bottom: 15px;
+            background: #000; border: 2px solid var(--border); border-radius: 14px;
+            color: white; font-size: 16px; outline: none; text-align: center; font-weight: 600;
         }
-        input:focus { 
-            border-color: var(--primary); 
-            box-shadow: 0 0 15px var(--primary-glow);
-            background: rgba(0,0,0,0.5);
-        }
-        input::placeholder { color: #555; font-weight: 400; }
+        input:focus { border-color: var(--primary); }
 
-        /* BOTONES JUGOSOS */
         .btn {
-            width: 100%; padding: 20px; border: none; border-radius: 20px;
-            font-size: 16px; font-weight: 800; letter-spacing: 1px;
+            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            font-size: 15px; font-weight: 800; letter-spacing: 1px;
             cursor: pointer; margin-top: 10px;
             display: flex; align-items: center; justify-content: center; gap: 10px;
-            text-transform: uppercase; transition: transform 0.1s, box-shadow 0.3s;
-            position: relative; overflow: hidden;
+            text-transform: uppercase;
         }
-        .btn:active { transform: scale(0.97); }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
         
-        .btn-primary { 
-            background: linear-gradient(135deg, var(--primary), #6366f1); 
-            color: white; 
-            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
-        }
-        .btn-primary:hover { box-shadow: 0 0 20px var(--primary); }
-
-        .btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #888; }
-        .btn-danger { background: var(--danger); color: white; box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: #888; }
+        .btn-danger { background: var(--danger); color: white; }
 
         /* JUEGO */
         .role-badge {
-            display: inline-block; padding: 5px 15px; border-radius: 50px;
-            font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-            margin-bottom: 10px; background: rgba(255,255,255,0.1); color: #aaa;
+            display: inline-block; padding: 5px 10px; border-radius: 4px;
+            font-size: 10px; font-weight: bold; text-transform: uppercase;
+            margin-bottom: 5px; background: #333; color: #aaa;
         }
-
         .role-title { 
-            font-family: var(--font-head); font-size: 2.5rem; margin: 10px 0; text-align: center; 
-            text-transform: uppercase; letter-spacing: 2px;
+            font-family: var(--font-head); font-size: 2.2rem; margin: 10px 0; text-align: center; 
+            text-transform: uppercase;
         }
-        .impostor { color: var(--danger); text-shadow: 0 0 30px rgba(239, 68, 68, 0.6); animation: glitch 2s infinite; }
-        .crew { color: var(--success); text-shadow: 0 0 30px rgba(16, 185, 129, 0.6); }
+        .impostor { color: var(--danger); }
+        .crew { color: var(--success); }
 
         .word-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-            border: 1px solid var(--border); border-radius: 24px;
-            padding: 30px 20px; margin: 25px 0;
-            text-align: center;
+            background: #27272a; border: 1px dashed var(--border); border-radius: 16px;
+            padding: 20px; margin: 20px 0; text-align: center;
         }
-        .secret-word { font-family: var(--font-head); font-size: 1.8rem; color: #fff; }
+        .secret-word { font-family: var(--font-head); font-size: 1.6rem; color: #fff; }
 
         .list-item {
-            padding: 15px; margin-bottom: 8px; border-radius: 12px;
-            background: rgba(255,255,255,0.03); border: 1px solid transparent;
-            display: flex; align-items: center; gap: 15px; font-weight: 600;
+            padding: 12px; margin-bottom: 6px; border-radius: 10px;
+            background: #27272a; border-bottom: 1px solid #3f3f46;
+            display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px;
         }
-        .list-item.active-vote { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .list-item.active-vote { border: 1px solid var(--danger); background: rgba(239, 68, 68, 0.1); }
         
         .timer { 
-            font-family: var(--font-head); font-size: 3rem; text-align: center; 
-            background: linear-gradient(to bottom, #fde047, #eab308);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(234, 179, 8, 0.5));
+            font-family: var(--font-head); font-size: 2.5rem; text-align: center; 
+            color: #fbbf24; margin-bottom: 15px;
         }
 
-        /* FOOTER FLOTANTE */
         .dev-badge {
-            position: fixed; bottom: 25px; right: 25px; 
-            background: rgba(0,0,0,0.8); border: 1px solid var(--border);
-            padding: 8px 15px; border-radius: 50px;
-            font-size: 10px; font-weight: 800; color: #666; letter-spacing: 1px;
-            backdrop-filter: blur(10px); z-index: 100; text-decoration: none;
-            display: flex; align-items: center; gap: 5px;
+            position: fixed; bottom: 20px; right: 20px; 
+            background: #111; border: 1px solid #333;
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 9px; font-weight: bold; color: #666; text-decoration: none;
         }
-        .dev-badge span { color: var(--primary); }
 
-        /* UTILIDADES Y ANIMACIONES */
         .hidden { display: none !important; }
-        @keyframes popIn { 0% {opacity:0; transform:scale(0.9)} 100% {opacity:1; transform:scale(1)} }
-        @keyframes glitch {
-            0% { transform: translate(0) }
-            20% { transform: translate(-2px, 2px) }
-            40% { transform: translate(-2px, -2px) }
-            60% { transform: translate(2px, 2px) }
-            80% { transform: translate(2px, -2px) }
-            100% { transform: translate(0) }
-        }
+        @keyframes fadeIn { from {opacity:0; transform:translateY(10px)} to {opacity:1; transform:translateY(0)} }
     </style>
 </head>
 <body>
-
-    <div class="background-fx"></div>
 
     <div class="container">
         <h1>Multiverso</h1>
 
         <div id="view-menu" class="glass-panel">
-            <div style="text-align: center; margin-bottom: 20px; font-size: 14px; color: #888;">SELECCIONA CATEGORÍA</div>
+            <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #888;">SELECCIONA CATEGORÍA</div>
             <div class="menu-grid">
-                <div class="menu-card" onclick="selectCat('lol')"><i data-lucide="sword" size="32"></i><span class="menu-title">LoL</span></div>
-                <div class="menu-card" onclick="selectCat('futbol')"><i data-lucide="trophy" size="32"></i><span class="menu-title">Fútbol</span></div>
-                <div class="menu-card" onclick="selectCat('comida')"><i data-lucide="pizza" size="32"></i><span class="menu-title">Comida</span></div>
-                <div class="menu-card" onclick="selectCat('paises')"><i data-lucide="globe" size="32"></i><span class="menu-title">Países</span></div>
-                <div class="menu-card" onclick="selectCat('streamers')"><i data-lucide="video" size="32"></i><span class="menu-title">Streamers</span></div>
-                <div class="menu-card" onclick="selectCat('cine')"><i data-lucide="clapperboard" size="32"></i><span class="menu-title">Cine</span></div>
-                <div class="menu-card" onclick="selectCat('marcas')"><i data-lucide="tag" size="32"></i><span class="menu-title">Marcas</span></div>
-                <div class="menu-card" onclick="selectCat('lugares')"><i data-lucide="map-pin" size="32"></i><span class="menu-title">Lugares</span></div>
-                <div class="menu-card" onclick="selectCat('animales')"><i data-lucide="cat" size="32"></i><span class="menu-title">Animales</span></div>
-                <div class="menu-card" onclick="selectCat('cosas')"><i data-lucide="box" size="32"></i><span class="menu-title">Random</span></div>
+                <div class="menu-card" onclick="selectCat('lol')"><i data-lucide="sword"></i><span class="menu-title">LoL</span></div>
+                <div class="menu-card" onclick="selectCat('futbol')"><i data-lucide="trophy"></i><span class="menu-title">Fútbol</span></div>
+                <div class="menu-card" onclick="selectCat('comida')"><i data-lucide="pizza"></i><span class="menu-title">Comida</span></div>
+                <div class="menu-card" onclick="selectCat('paises')"><i data-lucide="globe"></i><span class="menu-title">Países</span></div>
+                <div class="menu-card" onclick="selectCat('streamers')"><i data-lucide="video"></i><span class="menu-title">Streamers</span></div>
+                <div class="menu-card" onclick="selectCat('cine')"><i data-lucide="clapperboard"></i><span class="menu-title">Cine</span></div>
+                <div class="menu-card" onclick="selectCat('marcas')"><i data-lucide="tag"></i><span class="menu-title">Marcas</span></div>
+                <div class="menu-card" onclick="selectCat('lugares')"><i data-lucide="map-pin"></i><span class="menu-title">Lugares</span></div>
+                <div class="menu-card" onclick="selectCat('animales')"><i data-lucide="cat"></i><span class="menu-title">Animales</span></div>
+                <div class="menu-card" onclick="selectCat('cosas')"><i data-lucide="box"></i><span class="menu-title">Random</span></div>
             </div>
         </div>
 
         <div id="view-login" class="glass-panel hidden">
-            <div class="role-badge" style="width: 100%; text-align: center; color: var(--accent);">MISIÓN SELECCIONADA</div>
+            <div class="role-badge" style="width: 100%; text-align: center; color: var(--accent);">MISIÓN</div>
             <h2 id="login-title" style="text-align:center; font-family: var(--font-head); margin-top: 5px;"></h2>
             
             <div style="margin-top: 30px;">
@@ -228,90 +164,81 @@
                 <input type="number" id="room" placeholder="CÓDIGO DE SALA" pattern="\d*">
             </div>
 
-            <button class="btn btn-primary" onclick="joinGame()">ENTRAR AHORA <i data-lucide="arrow-right"></i></button>
+            <button class="btn btn-primary" onclick="joinGame()">ENTRAR <i data-lucide="arrow-right" size="16"></i></button>
             <button class="btn btn-secondary" onclick="showView('view-menu')">CANCELAR</button>
         </div>
 
         <div id="view-lobby" class="glass-panel hidden">
             <div style="text-align:center">
                 <div class="role-badge">CÓDIGO DE SALA</div>
-                <h1 id="lobby-code" style="margin: 10px 0; font-size: 3.5rem; letter-spacing: 5px; color: #fff;">---</h1>
+                <h1 id="lobby-code" style="margin: 10px 0; font-size: 3rem; letter-spacing: 5px; color: #fff;">---</h1>
             </div>
             
             <div id="player-list" style="margin-top: 20px;"></div>
             
             <div id="wait-msg" style="text-align:center; color:#666; margin-top:30px; font-style: italic;">
-                <i data-lucide="loader-2" class="animate-spin"></i><br>Esperando jugadores...
+                Esperando jugadores...
             </div>
             
-            <button id="start-btn" class="btn btn-primary hidden" onclick="startGame()">DESPEGAR <i data-lucide="rocket"></i></button>
+            <button id="start-btn" class="btn btn-primary hidden" onclick="startGame()">DESPEGAR <i data-lucide="rocket" size="16"></i></button>
         </div>
 
         <div id="view-game" class="glass-panel hidden">
             <div id="timer" class="timer">05:00</div>
             
             <div style="text-align:center">
-                <span class="role-badge">TU IDENTIDAD SECRETA</span>
+                <span class="role-badge">TU IDENTIDAD</span>
                 <div id="role-title" class="role-title"></div>
             </div>
             
             <div class="word-card">
-                <div style="font-size: 10px; color: #666; margin-bottom: 5px; text-transform: uppercase;">Palabra Clave</div>
+                <div style="font-size: 10px; color: #666; margin-bottom: 5px; text-transform: uppercase;">CLAVE</div>
                 <div id="word-box" class="secret-word"></div>
             </div>
 
-            <h4 style="margin: 20px 0 10px 0; color:var(--accent); text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Orden de Turno:</h4>
+            <h4 style="margin: 20px 0 10px 0; color:var(--accent); text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Orden de Turno:</h4>
             <div id="speak-order"></div>
 
-            <button class="btn btn-danger" onclick="forceVote()"><i data-lucide="siren"></i> REPORTE DE EMERGENCIA</button>
+            <button class="btn btn-danger" onclick="forceVote()"><i data-lucide="siren" size="16"></i> VOTAR YA</button>
         </div>
 
         <div id="view-voting" class="glass-panel hidden">
-            <h2 style="text-align:center; color:var(--danger); font-family: var(--font-head); text-transform: uppercase;">¡Votación!</h2>
-            <p style="text-align:center; color:#aaa; font-size: 14px;">Toca al jugador sospechoso</p>
+            <h2 style="text-align:center; color:var(--danger); font-family: var(--font-head); text-transform: uppercase;">¡VOTACIÓN!</h2>
+            <p style="text-align:center; color:#aaa; font-size: 13px;">Toca para acusar</p>
             <div id="vote-list" style="margin-top: 20px;"></div>
         </div>
 
         <div id="view-result" class="glass-panel hidden" style="text-align:center">
             <div id="res-icon" style="margin-bottom: 10px;"></div>
-            <h2 id="res-title" class="role-title" style="font-size: 3rem;"></h2>
-            <p id="res-msg" style="font-size:1.1rem; color: #ccc;"></p>
+            <h2 id="res-title" class="role-title" style="font-size: 2.5rem;"></h2>
+            <p id="res-msg" style="font-size:1rem; color: #ccc;"></p>
             
             <div class="word-card" style="border-color: var(--danger);">
                 <span style="font-size:10px; color:#aaa; text-transform: uppercase;">El Impostor era</span><br>
-                <strong id="res-impostor" style="font-size:1.8rem; color:var(--danger); font-family: var(--font-head);"></strong>
+                <strong id="res-impostor" style="font-size:1.5rem; color:var(--danger); font-family: var(--font-head);"></strong>
             </div>
             
-            <button class="btn btn-primary" onclick="location.reload()">JUGAR OTRA VEZ <i data-lucide="rotate-ccw"></i></button>
+            <button class="btn btn-primary" onclick="location.reload()">JUGAR OTRA VEZ</button>
         </div>
 
     </div>
 
-    <a href="#" class="dev-badge">
-        BY <span>NICO</span>
-    </a>
+    <a href="#" class="dev-badge">BY NICO</a>
 
     <script>
         const socket = io();
         let selectedCategory = '';
         let myRoom = '';
 
-        // --- ANIMACIONES CSS GLOBALES ---
-        const styleSheet = document.createElement("style");
-        styleSheet.innerText = `
-            .animate-spin { animation: spin 1s linear infinite; }
-            @keyframes spin { from {transform:rotate(0deg)} to {transform:rotate(360deg)} }
-        `;
-        document.head.appendChild(styleSheet);
-
-        // --- INICIALIZAR ---
         lucide.createIcons();
+
+        // Recuperar nombre
         document.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('impostor_name');
             if(saved) document.getElementById('username').value = saved;
         });
 
-        // --- NAVEGACIÓN ---
+        // Navegación
         function showView(id) {
             document.querySelectorAll('.container > div.glass-panel').forEach(d => d.classList.add('hidden'));
             document.querySelector('.container > h1').classList.remove('hidden'); 
@@ -325,7 +252,7 @@
             document.getElementById('login-title').innerText = cat.toUpperCase();
         }
 
-        // --- LÓGICA ---
+        // Acciones
         function joinGame() {
             const name = document.getElementById('username').value.trim();
             const room = document.getElementById('room').value.trim();
@@ -342,12 +269,12 @@
         function startGame() { socket.emit('startGame', myRoom); }
         function forceVote() { socket.emit('forceVote', myRoom); }
 
-        // --- SOCKETS ---
+        // Eventos Socket
         socket.on('updatePlayerList', (data) => {
             const list = document.getElementById('player-list');
             list.innerHTML = data.players.map(p => `
                 <div class="list-item">
-                    <div style="background:rgba(255,255,255,0.1); padding:8px; border-radius:50%;"><i data-lucide="user" size="18"></i></div>
+                    <div style="background:#333; padding:5px; border-radius:50%;"><i data-lucide="user" size="14"></i></div>
                     ${p.name}
                 </div>
             `).join('');
@@ -367,7 +294,7 @@
             if(data.role === 'impostor') {
                 roleEl.innerText = "IMPOSTOR";
                 roleEl.className = "role-title impostor";
-                wordEl.innerHTML = "<span style='color:#666; font-size: 1rem;'>Miente para sobrevivir</span>";
+                wordEl.innerHTML = "<span style='color:#666; font-size: 0.9rem;'>Engaña a todos</span>";
             } else {
                 roleEl.innerText = "TRIPULANTE";
                 roleEl.className = "role-title crew";
@@ -375,7 +302,7 @@
             }
 
             document.getElementById('speak-order').innerHTML = data.order.map((n, i) => 
-                `<div class="list-item" style="padding:10px;">
+                `<div class="list-item">
                     <span style="color:var(--primary); font-weight:800;">${i+1}.</span> ${n}
                 </div>`
             ).join('');
@@ -403,8 +330,8 @@
             el.style.background = "var(--primary)";
             el.style.color = "white";
             el.style.pointerEvents = "none";
-            el.querySelector('svg').style.display = "none";
-            el.innerHTML += " <span>VOTADO</span>";
+            el.innerHTML = "<span>VOTO ENVIADO</span> <i data-lucide='check'></i>";
+            lucide.createIcons();
             socket.emit('submitVote', { roomCode: myRoom, targetId: id });
         }
 
@@ -416,17 +343,16 @@
             if(data.winner === 'crew') {
                 title.innerText = "VICTORIA";
                 title.className = "role-title crew";
-                icon.innerHTML = '<i data-lucide="crown" size="60" color="var(--success)"></i>';
+                icon.innerHTML = '<i data-lucide="crown" size="48" color="var(--success)"></i>';
             } else {
                 title.innerText = "DERROTA";
                 title.className = "role-title impostor";
-                icon.innerHTML = '<i data-lucide="skull" size="60" color="var(--danger)"></i>';
+                icon.innerHTML = '<i data-lucide="skull" size="48" color="var(--danger)"></i>';
             }
             document.getElementById('res-msg').innerText = data.message;
             document.getElementById('res-impostor').innerText = data.impostorName;
             lucide.createIcons();
         });
-
     </script>
 </body>
 </html>
