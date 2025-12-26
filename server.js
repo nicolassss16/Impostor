@@ -97,8 +97,8 @@ const wordPacks = {
 let rooms = {};
 
 io.on('connection', (socket) => {
-    
-    socket.on('joinRoom', ({ roomCode, username, category }) => {
+    // Al unirse, recibimos si quieren modo Bufón
+    socket.on('joinRoom', ({ roomCode, username, category, withJester }) => {
         socket.join(roomCode);
         
         if (!rooms[roomCode]) {
@@ -107,20 +107,26 @@ io.on('connection', (socket) => {
                 category: wordPacks[category] ? category : 'cosas',
                 deck: [...(wordPacks[category] || wordPacks['cosas'])],
                 gameActive: false,
-                impostorId: null,
+                roles: {}, // Guardamos { socketId: 'impostor' | 'crew' | 'jester' }
                 timerInterval: null,
-                votes: {} // Para guardar quién vota a quién
+                votes: {},
+                votingOpen: false,
+                settings: {
+                    jester: withJester || false // Guardamos la configuración de la sala
+                }
             };
         }
         
         const room = rooms[roomCode];
-        const existingPlayer = room.players.find(p => p.id === socket.id);
-        
-        if (!existingPlayer) {
+        if (!room.players.find(p => p.id === socket.id)) {
             room.players.push({ id: socket.id, name: username });
         }
         
-        io.to(roomCode).emit('updatePlayerList', { players: room.players, category: room.category });
+        io.to(roomCode).emit('updatePlayerList', { 
+            players: room.players, 
+            category: room.category,
+            jesterActive: room.settings.jester 
+        });
     });
 
     socket.on('startGame', (roomCode) => {
@@ -128,70 +134,87 @@ io.on('connection', (socket) => {
         if (!room || room.players.length < 3 || room.gameActive) return;
 
         room.gameActive = true;
-        room.votes = {}; // Reiniciar votos
-        
-        // 1. Elegir Impostor
-        const impostorIndex = Math.floor(Math.random() * room.players.length);
-        room.impostorId = room.players[impostorIndex].id;
+        room.votes = {};
+        room.roles = {};
 
-        // 2. Elegir Palabra (Sin repetir hasta agotar mazo)
+        const playerCount = room.players.length;
+        
+        // --- ASIGNACIÓN DE ROLES ---
+        let availableRoles = [];
+        
+        // 1. Calcular cuántos impostores (2 si hay 7 o más jugadores)
+        const impostorCount = playerCount >= 7 ? 2 : 1;
+        for(let i=0; i<impostorCount; i++) availableRoles.push('impostor');
+
+        // 2. Agregar Bufón si está activado (y hay al menos 4 jugadores)
+        if (room.settings.jester && playerCount >= 4) {
+            availableRoles.push('jester');
+        }
+
+        // 3. Rellenar con Tripulantes
+        while (availableRoles.length < playerCount) {
+            availableRoles.push('crew');
+        }
+
+        // 4. Mezclar roles (Fisher-Yates Shuffle)
+        for (let i = availableRoles.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [availableRoles[i], availableRoles[j]] = [availableRoles[j], availableRoles[i]];
+        }
+
+        // 5. Asignar roles a jugadores
+        room.players.forEach((player, index) => {
+            room.roles[player.id] = availableRoles[index];
+        });
+
+        // --- PALABRA SECRETA ---
         if (room.deck.length === 0) room.deck = [...wordPacks[room.category]];
         const cardIndex = Math.floor(Math.random() * room.deck.length);
         const secretWord = room.deck[cardIndex];
         room.deck.splice(cardIndex, 1);
 
-        // 3. Orden de hablar
+        // --- ORDEN DE HABLA ---
         let speakingOrder = [...room.players];
-        for (let i = speakingOrder.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [speakingOrder[i], speakingOrder[j]] = [speakingOrder[j], speakingOrder[i]];
-        }
-        const orderNames = speakingOrder.map(p => p.name);
+        speakingOrder.sort(() => Math.random() - 0.5);
 
-        // 4. Enviar Roles
+        // --- ENVIAR DATOS A CADA JUGADOR ---
+        // Identificar impostores para que se conozcan entre ellos
+        const impostorNames = room.players
+            .filter(p => room.roles[p.id] === 'impostor')
+            .map(p => p.name);
+
         room.players.forEach((player) => {
-            const isImpostor = (player.id === room.impostorId);
+            const myRole = room.roles[player.id];
+            
             io.to(player.id).emit('gameStarted', {
-                role: isImpostor ? 'impostor' : 'crew',
-                word: isImpostor ? '???' : secretWord,
-                order: orderNames,
-                category: room.category
+                role: myRole,
+                word: (myRole === 'impostor') ? '???' : secretWord,
+                order: speakingOrder.map(p => p.name),
+                category: room.category,
+                // Si soy impostor y hay más de uno, envío quién es mi compañero
+                teammates: (myRole === 'impostor' && impostorCount > 1) ? impostorNames.filter(n => n !== player.name) : []
             });
         });
 
-        // 5. Iniciar Timer (300 segundos = 5 minutos)
+        // --- TIMER ---
         let timeLeft = 300; 
         io.to(roomCode).emit('timerUpdate', timeLeft);
-        
         if(room.timerInterval) clearInterval(room.timerInterval);
         
         room.timerInterval = setInterval(() => {
             timeLeft--;
-            if(timeLeft >= 0) {
-                io.to(roomCode).emit('timerUpdate', timeLeft);
-            } else {
-                startVotingPhase(roomCode);
-            }
+            if(timeLeft >= 0) io.to(roomCode).emit('timerUpdate', timeLeft);
+            else startVotingPhase(roomCode);
         }, 1000);
     });
 
-    // Forzar votación antes de tiempo
-    socket.on('forceVote', (roomCode) => {
-        startVotingPhase(roomCode);
-    });
+    socket.on('forceVote', (roomCode) => startVotingPhase(roomCode));
 
-    // Recibir voto
     socket.on('submitVote', ({ roomCode, targetId }) => {
         const room = rooms[roomCode];
         if(!room || !room.votingOpen) return;
-
-        // Guardar voto
         room.votes[socket.id] = targetId;
-
-        // Comprobar si todos votaron
-        if(Object.keys(room.votes).length === room.players.length) {
-            calculateWinner(roomCode);
-        }
+        if(Object.keys(room.votes).length === room.players.length) calculateWinner(roomCode);
     });
 
     socket.on('disconnect', () => {
@@ -204,7 +227,11 @@ io.on('connection', (socket) => {
                     if(room.timerInterval) clearInterval(room.timerInterval);
                     delete rooms[roomCode];
                 } else {
-                    io.to(roomCode).emit('updatePlayerList', { players: room.players, category: room.category });
+                    io.to(roomCode).emit('updatePlayerList', { 
+                        players: room.players, 
+                        category: room.category,
+                        jesterActive: room.settings.jester
+                    });
                 }
                 break;
             }
@@ -215,18 +242,14 @@ io.on('connection', (socket) => {
 function startVotingPhase(roomCode) {
     const room = rooms[roomCode];
     if(!room) return;
-    
     if(room.timerInterval) clearInterval(room.timerInterval);
     room.votingOpen = true;
-    
-    // Enviar lista de jugadores para votar (id y nombre)
     io.to(roomCode).emit('startVoting', room.players);
 }
 
 function calculateWinner(roomCode) {
     const room = rooms[roomCode];
     if(!room) return;
-
     room.gameActive = false;
     room.votingOpen = false;
 
@@ -240,7 +263,6 @@ function calculateWinner(roomCode) {
     // Encontrar al más votado
     let maxVotes = -1;
     let mostVotedId = null;
-    
     for(let targetId in voteCounts) {
         if(voteCounts[targetId] > maxVotes) {
             maxVotes = voteCounts[targetId];
@@ -248,29 +270,44 @@ function calculateWinner(roomCode) {
         }
     }
 
-    // Lógica de victoria
+    // --- LÓGICA DE VICTORIA (Nueva) ---
+    const votedRole = room.roles[mostVotedId];
+    const votedPlayerName = room.players.find(p => p.id === mostVotedId)?.name || 'Nadie';
+
+    // Obtener nombres de los impostores para revelarlos
+    const impostorsList = room.players
+        .filter(p => room.roles[p.id] === 'impostor')
+        .map(p => p.name)
+        .join(' y ');
+
     let winner = '';
     let message = '';
-    
-    if (mostVotedId === room.impostorId) {
+    let mainColor = ''; // Para el frontend
+
+    if (votedRole === 'jester') {
+        // CASO 1: Votaron al Bufón -> Gana el Bufón
+        winner = 'jester';
+        message = `¡JA JA JA! Votaron al Bufón. ${votedPlayerName} gana solo.`;
+        mainColor = 'jester';
+    } else if (votedRole === 'impostor') {
+        // CASO 2: Votaron al Impostor -> Ganan Tripulantes
         winner = 'crew';
-        message = '¡El Impostor fue descubierto!';
+        message = `¡Bien hecho! ${votedPlayerName} era el Impostor.`;
+        mainColor = 'crew';
     } else {
+        // CASO 3: Votaron a un Inocente -> Gana el Impostor
         winner = 'impostor';
-        message = '¡Se equivocaron! El Impostor ganó.';
+        message = `¡Error! ${votedPlayerName} era inocente. Ganan los Impostores.`;
+        mainColor = 'impostor';
     }
 
-    // Revelar quién era
-    const impostorName = room.players.find(p => p.id === room.impostorId)?.name || 'Desconocido';
-
     io.to(roomCode).emit('gameEnded', {
-        winner,
+        winnerKey: winner, // crew, impostor, jester
         message,
-        impostorName
+        impostorName: impostorsList,
+        colorType: mainColor
     });
 }
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-    console.log(`Server v2.0 corriendo en puerto ${PORT}`);
-});
+http.listen(PORT, () => { console.log(`Server v3.0 (Bufón + Doble Imp) listo en puerto ${PORT}`); });
