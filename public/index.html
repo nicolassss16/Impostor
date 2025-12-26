@@ -412,6 +412,12 @@
             document.getElementById('result-msg').innerText = data.message;
             document.getElementById('impostor-reveal').innerText = data.impostorName;
         });
+        document.addEventListener('DOMContentLoaded', () => {
+       const savedName = localStorage.getItem('impostor_name');
+        if (savedName) {
+        document.getElementById('username').value = savedName;
+    }
+});
     </script>
 </body>
 </html>
