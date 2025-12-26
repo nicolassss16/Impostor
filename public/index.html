@@ -13,7 +13,7 @@
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
-        /* --- ESTILOS OPTIMIZADOS (ZERO LAG) --- */
+        /* --- ESTILOS OPTIMIZADOS --- */
         :root {
             --bg-dark: #09090b;
             --panel-bg: #18181b; 
@@ -21,6 +21,7 @@
             --accent: #06b6d4;
             --danger: #ef4444;
             --success: #10b981;
+            --jester: #d946ef; /* Color Rosa/Violeta para Bufón */
             --border: #27272a;
             --font-main: 'Montserrat', sans-serif;
             --font-head: 'Russo One', sans-serif;
@@ -31,7 +32,6 @@
         body {
             font-family: var(--font-main);
             background-color: var(--bg-dark);
-            /* Fondo estático para rendimiento máximo */
             background-image: radial-gradient(circle at 50% 0%, #2e1065 0%, #000 70%);
             color: #fff; margin: 0; min-height: 100vh;
             display: flex; flex-direction: column; align-items: center;
@@ -48,7 +48,6 @@
             text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
         }
 
-        /* PANELES SÓLIDOS (Rápidos) */
         .glass-panel {
             background-color: var(--panel-bg);
             border: 1px solid var(--border);
@@ -59,14 +58,10 @@
         }
 
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        
         .menu-card {
-            background: #27272a;
-            border: 1px solid var(--border);
-            border-radius: 16px; padding: 15px; 
-            cursor: pointer; text-align: center;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 90px; transition: transform 0.1s;
+            background: #27272a; border: 1px solid var(--border); border-radius: 16px; padding: 15px; 
+            cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; height: 90px; transition: transform 0.1s;
         }
         .menu-card:active { background: #3f3f46; transform: scale(0.96); }
         .menu-card i { margin-bottom: 8px; color: var(--accent); }
@@ -79,6 +74,15 @@
         }
         input:focus { border-color: var(--primary); }
 
+        /* CHECKBOX PERSONALIZADO BUFÓN */
+        .checkbox-container {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin-bottom: 15px; padding: 10px; background: #27272a; border-radius: 12px;
+            cursor: pointer;
+        }
+        .checkbox-container input { width: auto; margin: 0; }
+        .checkbox-label { font-size: 12px; font-weight: 700; color: var(--jester); text-transform: uppercase; }
+
         .btn {
             width: 100%; padding: 16px; border: none; border-radius: 14px;
             font-size: 15px; font-weight: 800; letter-spacing: 1px;
@@ -87,12 +91,10 @@
             text-transform: uppercase;
         }
         .btn:active { transform: scale(0.98); opacity: 0.9; }
-        
         .btn-primary { background: var(--primary); color: white; }
         .btn-secondary { background: transparent; border: 1px solid var(--border); color: #888; }
         .btn-danger { background: var(--danger); color: white; }
 
-        /* JUEGO */
         .role-badge {
             display: inline-block; padding: 5px 10px; border-radius: 4px;
             font-size: 10px; font-weight: bold; text-transform: uppercase;
@@ -104,6 +106,7 @@
         }
         .impostor { color: var(--danger); }
         .crew { color: var(--success); }
+        .jester { color: var(--jester); }
 
         .word-card {
             background: #27272a; border: 1px dashed var(--border); border-radius: 16px;
@@ -129,7 +132,6 @@
             padding: 5px 12px; border-radius: 20px;
             font-size: 9px; font-weight: bold; color: #666; text-decoration: none;
         }
-
         .hidden { display: none !important; }
         @keyframes fadeIn { from {opacity:0; transform:translateY(10px)} to {opacity:1; transform:translateY(0)} }
     </style>
@@ -140,7 +142,6 @@
         <h1>Multiverso</h1>
 
         <div id="view-menu" class="glass-panel">
-            <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #888;">SELECCIONA CATEGORÍA</div>
             <div class="menu-grid">
                 <div class="menu-card" onclick="selectCat('lol')"><i data-lucide="sword"></i><span class="menu-title">LoL</span></div>
                 <div class="menu-card" onclick="selectCat('futbol')"><i data-lucide="trophy"></i><span class="menu-title">Fútbol</span></div>
@@ -156,22 +157,28 @@
         </div>
 
         <div id="view-login" class="glass-panel hidden">
-            <div class="role-badge" style="width: 100%; text-align: center; color: var(--accent);">MISIÓN</div>
+            <div class="role-badge" style="width: 100%; text-align: center; color: var(--accent);">CONFIGURACIÓN</div>
             <h2 id="login-title" style="text-align:center; font-family: var(--font-head); margin-top: 5px;"></h2>
             
             <div style="margin-top: 30px;">
-                <input type="text" id="username" placeholder="¿CÓMO TE LLAMAS?" autocomplete="off">
+                <input type="text" id="username" placeholder="TU NOMBRE" autocomplete="off">
                 <input type="number" id="room" placeholder="CÓDIGO DE SALA" pattern="\d*">
+                
+                <label class="checkbox-container">
+                    <input type="checkbox" id="jester-toggle">
+                    <span class="checkbox-label">🤡 Incluir Bufón</span>
+                </label>
             </div>
 
             <button class="btn btn-primary" onclick="joinGame()">ENTRAR <i data-lucide="arrow-right" size="16"></i></button>
-            <button class="btn btn-secondary" onclick="showView('view-menu')">CANCELAR</button>
+            <button class="btn btn-secondary" onclick="showView('view-menu')">VOLVER</button>
         </div>
 
         <div id="view-lobby" class="glass-panel hidden">
             <div style="text-align:center">
-                <div class="role-badge">CÓDIGO DE SALA</div>
-                <h1 id="lobby-code" style="margin: 10px 0; font-size: 3rem; letter-spacing: 5px; color: #fff;">---</h1>
+                <div class="role-badge">SALA</div>
+                <h1 id="lobby-code" style="margin: 10px 0; font-size: 3rem; color: #fff;">---</h1>
+                <div id="lobby-modes" style="font-size: 10px; color: var(--jester); display:none;">🤡 MODO BUFÓN ACTIVADO</div>
             </div>
             
             <div id="player-list" style="margin-top: 20px;"></div>
@@ -192,19 +199,18 @@
             </div>
             
             <div class="word-card">
-                <div style="font-size: 10px; color: #666; margin-bottom: 5px; text-transform: uppercase;">CLAVE</div>
+                <div id="word-label" style="font-size: 10px; color: #666; margin-bottom: 5px; text-transform: uppercase;">CLAVE</div>
                 <div id="word-box" class="secret-word"></div>
             </div>
 
-            <h4 style="margin: 20px 0 10px 0; color:var(--accent); text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Orden de Turno:</h4>
+            <h4 style="margin: 20px 0 10px 0; color:var(--accent); text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Orden:</h4>
             <div id="speak-order"></div>
 
             <button class="btn btn-danger" onclick="forceVote()"><i data-lucide="siren" size="16"></i> VOTAR YA</button>
         </div>
 
         <div id="view-voting" class="glass-panel hidden">
-            <h2 style="text-align:center; color:var(--danger); font-family: var(--font-head); text-transform: uppercase;">¡VOTACIÓN!</h2>
-            <p style="text-align:center; color:#aaa; font-size: 13px;">Toca para acusar</p>
+            <h2 style="text-align:center; color:var(--danger); font-family: var(--font-head);">¡VOTACIÓN!</h2>
             <div id="vote-list" style="margin-top: 20px;"></div>
         </div>
 
@@ -213,14 +219,13 @@
             <h2 id="res-title" class="role-title" style="font-size: 2.5rem;"></h2>
             <p id="res-msg" style="font-size:1rem; color: #ccc;"></p>
             
-            <div class="word-card" style="border-color: var(--danger);">
-                <span style="font-size:10px; color:#aaa; text-transform: uppercase;">El Impostor era</span><br>
-                <strong id="res-impostor" style="font-size:1.5rem; color:var(--danger); font-family: var(--font-head);"></strong>
+            <div class="word-card" style="border-color: #555;">
+                <span style="font-size:10px; color:#aaa;">IMPOSTOR(ES)</span><br>
+                <strong id="res-impostor" style="font-size:1.5rem; color:#fff; font-family: var(--font-head);"></strong>
             </div>
             
             <button class="btn btn-primary" onclick="location.reload()">JUGAR OTRA VEZ</button>
         </div>
-
     </div>
 
     <a href="#" class="dev-badge">BY NICO</a>
@@ -231,14 +236,11 @@
         let myRoom = '';
 
         lucide.createIcons();
-
-        // Recuperar nombre
         document.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('impostor_name');
             if(saved) document.getElementById('username').value = saved;
         });
 
-        // Navegación
         function showView(id) {
             document.querySelectorAll('.container > div.glass-panel').forEach(d => d.classList.add('hidden'));
             document.querySelector('.container > h1').classList.remove('hidden'); 
@@ -252,16 +254,25 @@
             document.getElementById('login-title').innerText = cat.toUpperCase();
         }
 
-        // Acciones
         function joinGame() {
             const name = document.getElementById('username').value.trim();
             const room = document.getElementById('room').value.trim();
+            // LEEMOS EL CHECKBOX DEL BUFÓN
+            const jester = document.getElementById('jester-toggle').checked;
+
             if(!name || !room) return alert("¡Completa los datos!");
 
             localStorage.setItem('impostor_name', name);
             myRoom = room.toUpperCase();
 
-            socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory });
+            // Enviamos la configuración al servidor
+            socket.emit('joinRoom', { 
+                roomCode: myRoom, 
+                username: name, 
+                category: selectedCategory,
+                withJester: jester 
+            });
+
             showView('view-lobby');
             document.getElementById('lobby-code').innerText = myRoom;
         }
@@ -269,7 +280,6 @@
         function startGame() { socket.emit('startGame', myRoom); }
         function forceVote() { socket.emit('forceVote', myRoom); }
 
-        // Eventos Socket
         socket.on('updatePlayerList', (data) => {
             const list = document.getElementById('player-list');
             list.innerHTML = data.players.map(p => `
@@ -278,8 +288,13 @@
                     ${p.name}
                 </div>
             `).join('');
-            lucide.createIcons();
+            
+            // Mostrar si el modo Bufón está activo en la sala
+            if(data.jesterActive) {
+                document.getElementById('lobby-modes').style.display = 'block';
+            }
 
+            lucide.createIcons();
             if(data.players.length >= 3) {
                 document.getElementById('start-btn').classList.remove('hidden');
                 document.getElementById('wait-msg').classList.add('hidden');
@@ -290,15 +305,29 @@
             showView('view-game');
             const roleEl = document.getElementById('role-title');
             const wordEl = document.getElementById('word-box');
+            const labelEl = document.getElementById('word-label');
 
             if(data.role === 'impostor') {
                 roleEl.innerText = "IMPOSTOR";
                 roleEl.className = "role-title impostor";
-                wordEl.innerHTML = "<span style='color:#666; font-size: 0.9rem;'>Engaña a todos</span>";
+                wordEl.innerHTML = "<span style='color:#666; font-size: 0.9rem;'>Miente para sobrevivir</span>";
+                labelEl.innerText = "MISIÓN";
+                
+                // Si hay compañeros, mostrarlos
+                if (data.teammates && data.teammates.length > 0) {
+                    wordEl.innerHTML += `<br><br><span style="color:#ef4444; font-size:10px;">TU COMPAÑERO ES: <br> ${data.teammates.join(', ')}</span>`;
+                }
+
+            } else if (data.role === 'jester') {
+                roleEl.innerText = "BUFÓN";
+                roleEl.className = "role-title jester";
+                wordEl.innerHTML = "<span style='color:#d946ef; font-size: 0.9rem;'>¡Haz que te voten!</span>";
+                labelEl.innerText = "OBJETIVO";
             } else {
                 roleEl.innerText = "TRIPULANTE";
                 roleEl.className = "role-title crew";
                 wordEl.innerText = data.word;
+                labelEl.innerText = "CLAVE";
             }
 
             document.getElementById('speak-order').innerHTML = data.order.map((n, i) => 
@@ -340,15 +369,31 @@
             const title = document.getElementById('res-title');
             const icon = document.getElementById('res-icon');
             
-            if(data.winner === 'crew') {
-                title.innerText = "VICTORIA";
-                title.className = "role-title crew";
-                icon.innerHTML = '<i data-lucide="crown" size="48" color="var(--success)"></i>';
+            // Colores dinámicos según quién ganó
+            let iconName = 'crown';
+            let iconColor = 'var(--success)';
+            let titleClass = 'crew';
+            let titleText = "VICTORIA";
+
+            if (data.winnerKey === 'impostor') {
+                iconName = 'skull';
+                iconColor = 'var(--danger)';
+                titleClass = 'impostor';
+                titleText = "IMPOSTORES";
+            } else if (data.winnerKey === 'jester') {
+                iconName = 'party-popper';
+                iconColor = 'var(--jester)';
+                titleClass = 'jester';
+                titleText = "BUFÓN GANA";
             } else {
-                title.innerText = "DERROTA";
-                title.className = "role-title impostor";
-                icon.innerHTML = '<i data-lucide="skull" size="48" color="var(--danger)"></i>';
+                // Tripulantes
+                titleText = "TRIPULANTES";
             }
+
+            title.innerText = titleText;
+            title.className = `role-title ${titleClass}`;
+            icon.innerHTML = `<i data-lucide="${iconName}" size="48" color="${iconColor}"></i>`;
+            
             document.getElementById('res-msg').innerText = data.message;
             document.getElementById('res-impostor').innerText = data.impostorName;
             lucide.createIcons();
