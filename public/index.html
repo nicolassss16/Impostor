@@ -308,17 +308,22 @@
         }
 
         // --- SOCKETS ---
-        function joinGame() {
-            const name = document.getElementById('username').value.trim();
-            const room = document.getElementById('room').value.trim();
-            if (!name || !room) return alert("Faltan datos");
-            myRoom = room.toUpperCase();
-            
-            socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory });
-            navigate('view-lobby');
-            document.getElementById('lobby-room-code').innerText = myRoom;
-        }
+       function joinGame() {
+    const name = document.getElementById('username').value.trim();
+    const room = document.getElementById('room').value.trim();
 
+    if (!name || !room) return alert("Faltan datos");
+
+    // 2. ¡GUARDAMOS EL NOMBRE AQUÍ! 
+    // La próxima vez que entre, el celular se acordará.
+    localStorage.setItem('impostor_name', name); 
+
+    myRoom = room.toUpperCase();
+    
+    socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory });
+    navigate('view-lobby');
+    document.getElementById('lobby-room-code').innerText = myRoom;
+}
         function startGame() { socket.emit('startGame', myRoom); }
 
         socket.on('updatePlayerList', (data) => {
