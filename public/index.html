@@ -3,426 +3,430 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="description" content="Juego multijugador de deducción social. Encuentra al impostor en categorías como LoL, Fútbol y más.">
-    <meta name="theme-color" content="#0f0c29">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Impostor | Neon Edition</title>
     
-    <title>Impostor | Multiverso</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Russo+One&display=swap" rel="stylesheet">
     
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
-        /* -----------------------------------------------------------
-           1. VARIABLES & RESET
-           ----------------------------------------------------------- */
+        /* --- ESTILOS NEON CYBERPUNK --- */
         :root {
-            --color-bg-start: #0f0c29;
-            --color-bg-mid: #302b63;
-            --color-bg-end: #24243e;
-            
-            --color-text-primary: #ffffff;
-            --color-text-secondary: #a0a0a0;
-            --color-accent: #3a7bd5;
-            --color-accent-gradient: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
-            --color-danger-gradient: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
-            
-            --color-impostor: #ff453a;
-            --color-crew: #30d158;
-            
-            --glass-bg: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-blur: 20px;
-            
-            --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --border-radius-lg: 24px;
-            --border-radius-md: 16px;
-            
-            --safe-area-top: env(safe-area-inset-top);
-            --safe-area-bottom: env(safe-area-inset-bottom);
+            --bg-dark: #09090b;
+            --primary: #8b5cf6; /* Violeta */
+            --primary-glow: rgba(139, 92, 246, 0.5);
+            --accent: #06b6d4; /* Cyan */
+            --danger: #ef4444; /* Rojo */
+            --success: #10b981; /* Verde */
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Montserrat', sans-serif;
+            --font-head: 'Russo One', sans-serif;
         }
 
-        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 
         body {
-            font-family: var(--font-family-base);
-            background: linear-gradient(135deg, var(--color-bg-start), var(--color-bg-mid), var(--color-bg-end));
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            color: var(--color-text-primary);
-            margin: 0; min-height: 100vh;
-            display: flex; flex-direction: column; overflow-x: hidden;
-            padding-top: var(--safe-area-top);
-            padding-bottom: var(--safe-area-bottom);
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: #fff; margin: 0; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; padding-bottom: 90px;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* FONDO ANIMADO DE MANCHAS (MESH GRADIENT) */
+        .background-fx {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%), 
+                radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%);
+            filter: blur(40px);
+            animation: pulseBg 10s ease-in-out infinite alternate;
+        }
+        @keyframes pulseBg {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.2); }
         }
 
-        /* -----------------------------------------------------------
-           2. TYPOGRAPHY & UTILITIES
-           ----------------------------------------------------------- */
-        h1, h2, h3 { margin: 0; line-height: 1.2; }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-        .hidden { display: none !important; }
+        .container { width: 100%; max-width: 450px; position: relative; z-index: 10; }
+        
+        /* LOGO CON EFECTO GLITCH */
+        h1 {
+            font-family: var(--font-head);
+            text-align: center; text-transform: uppercase; letter-spacing: 2px;
+            font-size: 2.5rem; margin-bottom: 30px;
+            background: linear-gradient(to right, #fff, #a5f3fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px var(--primary-glow);
+        }
 
-        /* -----------------------------------------------------------
-           3. LAYOUT
-           ----------------------------------------------------------- */
-        .app-header { padding: 20px; text-align: center; z-index: 10; }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; background: var(--color-accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .app-main { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 480px; margin: 0 auto; padding: 0 20px 80px 20px; position: relative; }
-
-        /* -----------------------------------------------------------
-           4. COMPONENTS
-           ----------------------------------------------------------- */
+        /* TARJETAS PREMIUM */
         .glass-panel {
-            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
-            border: 1px solid var(--glass-border); border-radius: var(--border-radius-lg); padding: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: var(--glass); 
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border); 
+            border-top: 1px solid rgba(255,255,255,0.15); /* Brillo superior */
+            border-radius: 30px; padding: 25px;
+            box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Grid */
-        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        .card-btn {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md);
-            padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s ease; color: var(--color-text-primary); text-decoration: none;
-        }
-        .card-btn:active { background: rgba(255, 255, 255, 0.15); transform: scale(0.98); }
-        .card-icon { font-size: 32px; margin-bottom: 8px; display: block; }
-        .card-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        /* Inputs & Buttons */
-        .form-group { margin-bottom: 16px; width: 100%; }
-        .input-field {
-            width: 100%; padding: 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border);
-            border-radius: 14px; color: #fff; font-size: 16px; transition: border-color 0.3s;
-        }
-        .input-field:focus { outline: none; border-color: var(--color-accent); background: rgba(0, 0, 0, 0.5); }
-
-        .btn-primary {
-            width: 100%; padding: 18px; background: var(--color-accent-gradient); color: white; border: none;
-            border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(58, 123, 213, 0.3);
-            transition: transform 0.1s; margin-top: 10px;
-        }
-        .btn-primary:active { transform: scale(0.97); }
-        .btn-secondary { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--color-text-secondary); box-shadow: none; }
-        .btn-danger { background: var(--color-danger-gradient); box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3); }
-
-        /* Lists */
-        .player-list { list-style: none; padding: 0; margin: 20px 0; max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; }
-        .player-item { padding: 14px 20px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; }
-        .player-item:last-child { border-bottom: none; }
-
-        /* Game Elements */
-        .text-impostor { color: var(--color-impostor); text-shadow: 0 0 15px rgba(255, 69, 58, 0.4); }
-        .text-crew { color: var(--color-crew); text-shadow: 0 0 15px rgba(48, 209, 88, 0.4); }
+        /* GRID DEL MENU */
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         
-        /* Timer & Voting */
-        .timer-display {
-            font-size: 2.5rem; font-weight: 700; text-align: center; margin: 10px 0;
-            font-variant-numeric: tabular-nums; letter-spacing: 2px; color: #ffd700;
+        .menu-card {
+            background: rgba(30, 30, 35, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 20px; padding: 20px; 
+            cursor: pointer; text-align: center;
+            transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 110px; position: relative; overflow: hidden;
         }
+        /* Efecto de brillo al tocar */
+        .menu-card::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+            transform: translateX(-100%); transition: 0.5s;
+        }
+        .menu-card:hover::after { transform: translateX(100%); }
+        .menu-card:active { transform: scale(0.95); border-color: var(--primary); }
         
-        .vote-item {
-            padding: 16px; margin-bottom: 8px; background: rgba(255,255,255,0.1); border-radius: 12px;
-            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            border: 2px solid transparent; transition: all 0.2s;
-        }
-        .vote-item.selected { border-color: var(--color-accent); background: rgba(58, 123, 213, 0.2); }
-        .vote-item:active { transform: scale(0.98); }
+        .menu-card i { margin-bottom: 10px; color: var(--accent); transition: 0.3s; }
+        .menu-card:hover i { transform: scale(1.2); text-shadow: 0 0 10px var(--accent); }
+        .menu-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ccc; }
 
-        /* Footer */
-        .app-footer { position: fixed; bottom: max(20px, var(--safe-area-bottom)); right: 20px; z-index: 100; }
-        .copyright-badge {
-            width: 60px; height: 60px; border-radius: 50%; background: rgba(15, 12, 41, 0.8); backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border); color: var(--color-text-secondary); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center; font-size: 8px; font-weight: bold;
-            text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-decoration: none;
+        /* INPUTS ESTILO IOS/NEON */
+        input {
+            width: 100%; padding: 18px; margin-bottom: 15px;
+            background: rgba(0,0,0,0.3); border: 2px solid var(--border); border-radius: 18px;
+            color: white; font-size: 16px; font-family: var(--font-main); outline: none;
+            transition: 0.3s; text-align: center; font-weight: 600;
+        }
+        input:focus { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 15px var(--primary-glow);
+            background: rgba(0,0,0,0.5);
+        }
+        input::placeholder { color: #555; font-weight: 400; }
+
+        /* BOTONES JUGOSOS */
+        .btn {
+            width: 100%; padding: 20px; border: none; border-radius: 20px;
+            font-size: 16px; font-weight: 800; letter-spacing: 1px;
+            cursor: pointer; margin-top: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-transform: uppercase; transition: transform 0.1s, box-shadow 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .btn:active { transform: scale(0.97); }
+        
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--primary), #6366f1); 
+            color: white; 
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        }
+        .btn-primary:hover { box-shadow: 0 0 20px var(--primary); }
+
+        .btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #888; }
+        .btn-danger { background: var(--danger); color: white; box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4); }
+
+        /* JUEGO */
+        .role-badge {
+            display: inline-block; padding: 5px 15px; border-radius: 50px;
+            font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+            margin-bottom: 10px; background: rgba(255,255,255,0.1); color: #aaa;
         }
 
-        @media (min-width: 768px) { .app-main { max-width: 600px; } .category-grid { grid-template-columns: repeat(3, 1fr); } }
+        .role-title { 
+            font-family: var(--font-head); font-size: 2.5rem; margin: 10px 0; text-align: center; 
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .impostor { color: var(--danger); text-shadow: 0 0 30px rgba(239, 68, 68, 0.6); animation: glitch 2s infinite; }
+        .crew { color: var(--success); text-shadow: 0 0 30px rgba(16, 185, 129, 0.6); }
+
+        .word-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+            border: 1px solid var(--border); border-radius: 24px;
+            padding: 30px 20px; margin: 25px 0;
+            text-align: center;
+        }
+        .secret-word { font-family: var(--font-head); font-size: 1.8rem; color: #fff; }
+
+        .list-item {
+            padding: 15px; margin-bottom: 8px; border-radius: 12px;
+            background: rgba(255,255,255,0.03); border: 1px solid transparent;
+            display: flex; align-items: center; gap: 15px; font-weight: 600;
+        }
+        .list-item.active-vote { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        
+        .timer { 
+            font-family: var(--font-head); font-size: 3rem; text-align: center; 
+            background: linear-gradient(to bottom, #fde047, #eab308);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(234, 179, 8, 0.5));
+        }
+
+        /* FOOTER FLOTANTE */
+        .dev-badge {
+            position: fixed; bottom: 25px; right: 25px; 
+            background: rgba(0,0,0,0.8); border: 1px solid var(--border);
+            padding: 8px 15px; border-radius: 50px;
+            font-size: 10px; font-weight: 800; color: #666; letter-spacing: 1px;
+            backdrop-filter: blur(10px); z-index: 100; text-decoration: none;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .dev-badge span { color: var(--primary); }
+
+        /* UTILIDADES Y ANIMACIONES */
+        .hidden { display: none !important; }
+        @keyframes popIn { 0% {opacity:0; transform:scale(0.9)} 100% {opacity:1; transform:scale(1)} }
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
     </style>
 </head>
 <body>
 
-    <header class="app-header">
-        <div class="logo" role="heading" aria-level="1">Multiverso</div>
-    </header>
+    <div class="background-fx"></div>
 
-    <main class="app-main" id="main-content">
-        
-        <section id="view-menu" aria-labelledby="menu-heading" class="animate-fade">
-            <header style="text-align: center; margin-bottom: 24px;">
-                <h2 id="menu-heading" style="opacity: 0.8; font-weight: 500;">Selecciona una misión</h2>
-            </header>
+    <div class="container">
+        <h1>Multiverso</h1>
+
+        <div id="view-menu" class="glass-panel">
+            <div style="text-align: center; margin-bottom: 20px; font-size: 14px; color: #888;">SELECCIONA CATEGORÍA</div>
+            <div class="menu-grid">
+                <div class="menu-card" onclick="selectCat('lol')"><i data-lucide="sword" size="32"></i><span class="menu-title">LoL</span></div>
+                <div class="menu-card" onclick="selectCat('futbol')"><i data-lucide="trophy" size="32"></i><span class="menu-title">Fútbol</span></div>
+                <div class="menu-card" onclick="selectCat('comida')"><i data-lucide="pizza" size="32"></i><span class="menu-title">Comida</span></div>
+                <div class="menu-card" onclick="selectCat('paises')"><i data-lucide="globe" size="32"></i><span class="menu-title">Países</span></div>
+                <div class="menu-card" onclick="selectCat('streamers')"><i data-lucide="video" size="32"></i><span class="menu-title">Streamers</span></div>
+                <div class="menu-card" onclick="selectCat('cine')"><i data-lucide="clapperboard" size="32"></i><span class="menu-title">Cine</span></div>
+                <div class="menu-card" onclick="selectCat('marcas')"><i data-lucide="tag" size="32"></i><span class="menu-title">Marcas</span></div>
+                <div class="menu-card" onclick="selectCat('lugares')"><i data-lucide="map-pin" size="32"></i><span class="menu-title">Lugares</span></div>
+                <div class="menu-card" onclick="selectCat('animales')"><i data-lucide="cat" size="32"></i><span class="menu-title">Animales</span></div>
+                <div class="menu-card" onclick="selectCat('cosas')"><i data-lucide="box" size="32"></i><span class="menu-title">Random</span></div>
+            </div>
+        </div>
+
+        <div id="view-login" class="glass-panel hidden">
+            <div class="role-badge" style="width: 100%; text-align: center; color: var(--accent);">MISIÓN SELECCIONADA</div>
+            <h2 id="login-title" style="text-align:center; font-family: var(--font-head); margin-top: 5px;"></h2>
             
-            <nav class="category-grid" role="menu">
-                <button onclick="selectCategory('lol')" class="card-btn">
-                    <span class="card-icon">⚔️</span><span class="card-title">LoL</span>
-                </button>
-                <button onclick="selectCategory('futbol')" class="card-btn">
-                    <span class="card-icon">⚽</span><span class="card-title">Fútbol</span>
-                </button>
-                <button onclick="selectCategory('comida')" class="card-btn">
-                    <span class="card-icon">🍕</span><span class="card-title">Comida</span>
-                </button>
-                <button onclick="selectCategory('paises')" class="card-btn">
-                    <span class="card-icon">🌍</span><span class="card-title">Países</span>
-                </button>
-                <button onclick="selectCategory('streamers')" class="card-btn">
-                    <span class="card-icon">📹</span><span class="card-title">Streamers</span>
-                </button>
-                <button onclick="selectCategory('cine')" class="card-btn">
-                    <span class="card-icon">🎬</span><span class="card-title">Cine</span>
-                </button>
-                <button onclick="selectCategory('marcas')" class="card-btn">
-                    <span class="card-icon">🏷️</span><span class="card-title">Marcas</span>
-                </button>
-                <button onclick="selectCategory('lugares')" class="card-btn">
-                    <span class="card-icon">📍</span><span class="card-title">Lugares</span>
-                </button>
-                <button onclick="selectCategory('animales')" class="card-btn">
-                    <span class="card-icon">🦁</span><span class="card-title">Animales</span>
-                </button>
-                <button onclick="selectCategory('cosas')" class="card-btn">
-                    <span class="card-icon">📦</span><span class="card-title">Random</span>
-                </button>
-            </nav>
-        </section>
-
-        <section id="view-login" aria-labelledby="login-heading" class="glass-panel hidden">
-            <header style="text-align: center; margin-bottom: 20px;">
-                <h2 id="login-heading" style="color: var(--color-accent);">Identificación</h2>
-                <p style="color: var(--color-text-secondary); font-size: 0.9rem;">Ingresa tus credenciales</p>
-            </header>
-
-            <form onsubmit="event.preventDefault(); joinGame();">
-                <div class="form-group">
-                    <label for="username" class="sr-only">Nombre</label>
-                    <input type="text" id="username" class="input-field" placeholder="Tu Nombre de Agente" maxlength="12" required>
-                </div>
-                <div class="form-group">
-                    <label for="room" class="sr-only">Sala</label>
-                    <input type="number" id="room" class="input-field" placeholder="Código de Sala (Ej: 1234)" pattern="\d*" required>
-                </div>
-                <button type="submit" class="btn-primary">Ingresar a la Sala</button>
-                <button type="button" class="btn-primary btn-secondary" onclick="navigate('view-menu')">Cancelar</button>
-            </form>
-        </section>
-
-        <section id="view-lobby" aria-labelledby="lobby-heading" class="glass-panel hidden">
-            <header style="text-align: center;">
-                <span style="font-size: 12px; letter-spacing: 1px; color: var(--color-text-secondary);">SALA SEGURA</span>
-                <h2 id="lobby-room-code" style="font-size: 2.5rem; letter-spacing: 2px; margin: 5px 0;">----</h2>
-                <p id="lobby-category-display" style="color: var(--color-accent); font-weight: bold; text-transform: uppercase;">...</p>
-            </header>
-
-            <div aria-live="polite">
-                <ul id="player-list" class="player-list"></ul>
+            <div style="margin-top: 30px;">
+                <input type="text" id="username" placeholder="¿CÓMO TE LLAMAS?" autocomplete="off">
+                <input type="number" id="room" placeholder="CÓDIGO DE SALA" pattern="\d*">
             </div>
 
-            <div id="waiting-msg" style="text-align: center; color: var(--color-text-secondary); margin-bottom: 20px;">
-                <p>Esperando agentes... (Mín. 3)</p>
-                <div style="font-size: 24px; animation: spin 2s infinite linear;">⏳</div>
+            <button class="btn btn-primary" onclick="joinGame()">ENTRAR AHORA <i data-lucide="arrow-right"></i></button>
+            <button class="btn btn-secondary" onclick="showView('view-menu')">CANCELAR</button>
+        </div>
+
+        <div id="view-lobby" class="glass-panel hidden">
+            <div style="text-align:center">
+                <div class="role-badge">CÓDIGO DE SALA</div>
+                <h1 id="lobby-code" style="margin: 10px 0; font-size: 3.5rem; letter-spacing: 5px; color: #fff;">---</h1>
+            </div>
+            
+            <div id="player-list" style="margin-top: 20px;"></div>
+            
+            <div id="wait-msg" style="text-align:center; color:#666; margin-top:30px; font-style: italic;">
+                <i data-lucide="loader-2" class="animate-spin"></i><br>Esperando jugadores...
+            </div>
+            
+            <button id="start-btn" class="btn btn-primary hidden" onclick="startGame()">DESPEGAR <i data-lucide="rocket"></i></button>
+        </div>
+
+        <div id="view-game" class="glass-panel hidden">
+            <div id="timer" class="timer">05:00</div>
+            
+            <div style="text-align:center">
+                <span class="role-badge">TU IDENTIDAD SECRETA</span>
+                <div id="role-title" class="role-title"></div>
+            </div>
+            
+            <div class="word-card">
+                <div style="font-size: 10px; color: #666; margin-bottom: 5px; text-transform: uppercase;">Palabra Clave</div>
+                <div id="word-box" class="secret-word"></div>
             </div>
 
-            <button id="start-btn" class="btn-primary hidden" onclick="startGame()">INICIAR MISIÓN</button>
-        </section>
+            <h4 style="margin: 20px 0 10px 0; color:var(--accent); text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Orden de Turno:</h4>
+            <div id="speak-order"></div>
 
-        <section id="view-game" aria-labelledby="game-heading" class="glass-panel hidden">
-            <div id="timer-display" class="timer-display">05:00</div>
+            <button class="btn btn-danger" onclick="forceVote()"><i data-lucide="siren"></i> REPORTE DE EMERGENCIA</button>
+        </div>
+
+        <div id="view-voting" class="glass-panel hidden">
+            <h2 style="text-align:center; color:var(--danger); font-family: var(--font-head); text-transform: uppercase;">¡Votación!</h2>
+            <p style="text-align:center; color:#aaa; font-size: 14px;">Toca al jugador sospechoso</p>
+            <div id="vote-list" style="margin-top: 20px;"></div>
+        </div>
+
+        <div id="view-result" class="glass-panel hidden" style="text-align:center">
+            <div id="res-icon" style="margin-bottom: 10px;"></div>
+            <h2 id="res-title" class="role-title" style="font-size: 3rem;"></h2>
+            <p id="res-msg" style="font-size:1.1rem; color: #ccc;"></p>
             
-            <header style="text-align: center;">
-                <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-secondary);">Tu Identidad</p>
-                <h2 id="game-role-title" style="font-size: 2rem; font-weight: 800;"></h2>
-            </header>
-
-            <article class="role-display" style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; border: 1px dashed var(--glass-border); margin-top: 20px;">
-                <div id="game-word" style="font-size: 1.5rem; font-weight: bold;"></div>
-            </article>
-
-            <div style="margin-top: 20px;">
-                <h3 style="font-size: 1rem; color: var(--color-accent); margin-bottom: 10px;">Orden sugerido:</h3>
-                <ul id="speak-order" class="player-list" style="max-height: 150px;"></ul>
+            <div class="word-card" style="border-color: var(--danger);">
+                <span style="font-size:10px; color:#aaa; text-transform: uppercase;">El Impostor era</span><br>
+                <strong id="res-impostor" style="font-size:1.8rem; color:var(--danger); font-family: var(--font-head);"></strong>
             </div>
-
-            <button class="btn-primary btn-danger" onclick="forceVote()">🚨 VOTAR AHORA</button>
-        </section>
-
-        <section id="view-voting" class="glass-panel hidden">
-            <header style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: var(--color-impostor);">¡ALARMA!</h2>
-                <p style="color: #fff;">¿Quién es el traidor?</p>
-            </header>
             
-            <div id="voting-list">
-                </div>
-        </section>
+            <button class="btn btn-primary" onclick="location.reload()">JUGAR OTRA VEZ <i data-lucide="rotate-ccw"></i></button>
+        </div>
 
-        <section id="view-result" class="glass-panel hidden" style="text-align: center;">
-            <h2 id="result-title" style="font-size: 2rem; margin-bottom: 10px;"></h2>
-            <p id="result-msg" style="font-size: 1.2rem; color: #ddd; margin-bottom: 30px;"></p>
-            
-            <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; margin-bottom: 30px;">
-                <span style="display:block; font-size: 0.8rem; color: #aaa; text-transform: uppercase;">El Impostor era</span>
-                <strong id="impostor-reveal" style="font-size: 1.8rem; color: var(--color-impostor);"></strong>
-            </div>
+    </div>
 
-            <button class="btn-primary" onclick="location.reload()">Nueva Misión</button>
-        </section>
-
-    </main>
-
-    <footer class="app-footer">
-        <a href="#" class="copyright-badge">
-            <span>Dev</span><span style="font-size: 10px; margin: 2px 0;">NICO</span><span>2025</span>
-        </a>
-    </footer>
+    <a href="#" class="dev-badge">
+        BY <span>NICO</span>
+    </a>
 
     <script>
         const socket = io();
         let selectedCategory = '';
         let myRoom = '';
 
+        // --- ANIMACIONES CSS GLOBALES ---
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `
+            .animate-spin { animation: spin 1s linear infinite; }
+            @keyframes spin { from {transform:rotate(0deg)} to {transform:rotate(360deg)} }
+        `;
+        document.head.appendChild(styleSheet);
+
+        // --- INICIALIZAR ---
+        lucide.createIcons();
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('impostor_name');
+            if(saved) document.getElementById('username').value = saved;
+        });
+
         // --- NAVEGACIÓN ---
-        function navigate(viewId) {
-            document.querySelectorAll('main > section').forEach(el => {
-                el.classList.add('hidden');
-                el.setAttribute('aria-hidden', 'true');
-            });
-            const target = document.getElementById(viewId);
-            target.classList.remove('hidden');
-            target.setAttribute('aria-hidden', 'false');
+        function showView(id) {
+            document.querySelectorAll('.container > div.glass-panel').forEach(d => d.classList.add('hidden'));
+            document.querySelector('.container > h1').classList.remove('hidden'); 
+            document.getElementById(id).classList.remove('hidden');
+            lucide.createIcons();
         }
 
-        function selectCategory(cat) {
+        function selectCat(cat) {
             selectedCategory = cat;
-            navigate('view-login');
-            document.getElementById('login-heading').innerHTML = `Misión: ${cat.toUpperCase()}`;
+            showView('view-login');
+            document.getElementById('login-title').innerText = cat.toUpperCase();
         }
 
-        // --- SOCKETS ---
-       function joinGame() {
-    const name = document.getElementById('username').value.trim();
-    const room = document.getElementById('room').value.trim();
+        // --- LÓGICA ---
+        function joinGame() {
+            const name = document.getElementById('username').value.trim();
+            const room = document.getElementById('room').value.trim();
+            if(!name || !room) return alert("¡Completa los datos!");
 
-    if (!name || !room) return alert("Faltan datos");
+            localStorage.setItem('impostor_name', name);
+            myRoom = room.toUpperCase();
 
-    // 2. ¡GUARDAMOS EL NOMBRE AQUÍ! 
-    // La próxima vez que entre, el celular se acordará.
-    localStorage.setItem('impostor_name', name); 
+            socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory });
+            showView('view-lobby');
+            document.getElementById('lobby-code').innerText = myRoom;
+        }
 
-    myRoom = room.toUpperCase();
-    
-    socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory });
-    navigate('view-lobby');
-    document.getElementById('lobby-room-code').innerText = myRoom;
-}
         function startGame() { socket.emit('startGame', myRoom); }
-
-        socket.on('updatePlayerList', (data) => {
-            const { players, category } = data;
-            document.getElementById('lobby-category-display').innerText = category;
-            
-            const list = document.getElementById('player-list');
-            list.innerHTML = players.map(p => `
-                <li class="player-item"><span style="margin-right:10px;">👤</span>${p.name}</li>
-            `).join('');
-
-            const btn = document.getElementById('start-btn');
-            const msg = document.getElementById('waiting-msg');
-            if (players.length >= 3) {
-                btn.classList.remove('hidden');
-                msg.classList.add('hidden');
-            } else {
-                btn.classList.add('hidden');
-                msg.classList.remove('hidden');
-            }
-        });
-
-        // --- JUEGO ---
-        socket.on('gameStarted', (data) => {
-            navigate('view-game');
-            const roleTitle = document.getElementById('game-role-title');
-            const wordDiv = document.getElementById('game-word');
-
-            if (data.role === 'impostor') {
-                roleTitle.innerText = "IMPOSTOR";
-                roleTitle.className = "text-impostor";
-                wordDiv.innerText = "🤫 Tu objetivo: Engañar a todos.";
-            } else {
-                roleTitle.innerText = "TRIPULANTE";
-                roleTitle.className = "text-crew";
-                wordDiv.innerHTML = `Clave: <br><span style="color:#fff;">${data.word}</span>`;
-            }
-
-            document.getElementById('speak-order').innerHTML = data.order.map((name, i) => `
-                <li class="player-item">
-                    <strong style="color:var(--color-accent); margin-right:10px;">${i+1}.</strong> ${name}
-                </li>
-            `).join('');
-        });
-
-        // --- TIMER ---
-        socket.on('timerUpdate', (seconds) => {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            document.getElementById('timer-display').innerText = 
-                `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-        });
-
-        // --- VOTACIÓN ---
         function forceVote() { socket.emit('forceVote', myRoom); }
 
-        socket.on('startVoting', (players) => {
-            navigate('view-voting');
-            const container = document.getElementById('voting-list');
-            container.innerHTML = players.map(p => `
-                <div class="vote-item" onclick="submitVote(this, '${p.id}')">
-                    <span style="font-weight:600; font-size:1.1rem;">👤 ${p.name}</span>
-                    <span style="font-size:0.8rem; color:#aaa;">Tocar para acusar</span>
+        // --- SOCKETS ---
+        socket.on('updatePlayerList', (data) => {
+            const list = document.getElementById('player-list');
+            list.innerHTML = data.players.map(p => `
+                <div class="list-item">
+                    <div style="background:rgba(255,255,255,0.1); padding:8px; border-radius:50%;"><i data-lucide="user" size="18"></i></div>
+                    ${p.name}
                 </div>
             `).join('');
+            lucide.createIcons();
+
+            if(data.players.length >= 3) {
+                document.getElementById('start-btn').classList.remove('hidden');
+                document.getElementById('wait-msg').classList.add('hidden');
+            }
         });
 
-        function submitVote(element, targetId) {
-            // Estilo visual de selección
-            document.querySelectorAll('.vote-item').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            element.style.pointerEvents = 'none'; // Bloquear revoto
-            element.querySelector('span:last-child').innerText = "✅ VOTO ENVIADO";
-            
-            socket.emit('submitVote', { roomCode: myRoom, targetId: targetId });
+        socket.on('gameStarted', (data) => {
+            showView('view-game');
+            const roleEl = document.getElementById('role-title');
+            const wordEl = document.getElementById('word-box');
+
+            if(data.role === 'impostor') {
+                roleEl.innerText = "IMPOSTOR";
+                roleEl.className = "role-title impostor";
+                wordEl.innerHTML = "<span style='color:#666; font-size: 1rem;'>Miente para sobrevivir</span>";
+            } else {
+                roleEl.innerText = "TRIPULANTE";
+                roleEl.className = "role-title crew";
+                wordEl.innerText = data.word;
+            }
+
+            document.getElementById('speak-order').innerHTML = data.order.map((n, i) => 
+                `<div class="list-item" style="padding:10px;">
+                    <span style="color:var(--primary); font-weight:800;">${i+1}.</span> ${n}
+                </div>`
+            ).join('');
+        });
+
+        socket.on('timerUpdate', (sec) => {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            document.getElementById('timer').innerText = `${m}:${s<10?'0':''}${s}`;
+            if(sec < 10) document.getElementById('timer').style.color = "var(--danger)";
+        });
+
+        socket.on('startVoting', (players) => {
+            showView('view-voting');
+            document.getElementById('vote-list').innerHTML = players.map(p => `
+                <div class="list-item active-vote" style="cursor:pointer; justify-content:space-between;" onclick="sendVote(this, '${p.id}')">
+                    <span style="font-size:1.1rem;">${p.name}</span>
+                    <i data-lucide="fingerprint"></i>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        });
+
+        function sendVote(el, id) {
+            el.style.background = "var(--primary)";
+            el.style.color = "white";
+            el.style.pointerEvents = "none";
+            el.querySelector('svg').style.display = "none";
+            el.innerHTML += " <span>VOTADO</span>";
+            socket.emit('submitVote', { roomCode: myRoom, targetId: id });
         }
 
-        // --- RESULTADOS ---
         socket.on('gameEnded', (data) => {
-            navigate('view-result');
-            const title = document.getElementById('result-title');
+            showView('view-result');
+            const title = document.getElementById('res-title');
+            const icon = document.getElementById('res-icon');
             
             if(data.winner === 'crew') {
-                title.innerHTML = "🏆 GANAN TRIPULANTES";
-                title.className = "text-crew";
+                title.innerText = "VICTORIA";
+                title.className = "role-title crew";
+                icon.innerHTML = '<i data-lucide="crown" size="60" color="var(--success)"></i>';
             } else {
-                title.innerHTML = "🔪 GANA IMPOSTOR";
-                title.className = "text-impostor";
+                title.innerText = "DERROTA";
+                title.className = "role-title impostor";
+                icon.innerHTML = '<i data-lucide="skull" size="60" color="var(--danger)"></i>';
             }
-            
-            document.getElementById('result-msg').innerText = data.message;
-            document.getElementById('impostor-reveal').innerText = data.impostorName;
+            document.getElementById('res-msg').innerText = data.message;
+            document.getElementById('res-impostor').innerText = data.impostorName;
+            lucide.createIcons();
         });
-        document.addEventListener('DOMContentLoaded', () => {
-       const savedName = localStorage.getItem('impostor_name');
-        if (savedName) {
-        document.getElementById('username').value = savedName;
-    }
-});
+
     </script>
 </body>
 </html>
