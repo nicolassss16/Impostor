@@ -49,7 +49,6 @@
             transform: rotate(-3deg);
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
-
         @keyframes float { 0%, 100% {transform:translateY(0)} 50% {transform:translateY(-10px)} }
 
         /* EFECTO CRISTAL (GLASSMORPHISM) */
@@ -62,7 +61,6 @@
             border: 2px solid var(--glass-border);
             animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-
         @keyframes slideUp { from {opacity:0; transform:translateY(20px)} to {opacity:1; transform:translateY(0)} }
 
         /* GRID DE CATEGORÍAS */
@@ -105,6 +103,421 @@
         .toggle-box {
             background: rgba(255,255,255,0.5); padding: 12px; border-radius: 16px;
             display: flex; align-items: center; justify-content: center; gap: 10px;
+            cursor: pointer; margin-bottom: 15px; border: 2px dashed #f0abfc;
+        }
+        .toggle-box input { width: auto; margin: 0; }
+
+        /* LISTA DE SALAS (NUEVO) */
+        .rooms-container { margin-top: 25px; width: 100%; padding-top: 15px; border-top: 2px dashed rgba(0,0,0,0.1); }
+        .room-label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block; text-align: center; }
+        .room-list { display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; }
+        .room-card {
+            background: rgba(255,255,255,0.6); border: 2px solid white;
+            border-radius: 12px; padding: 10px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; transition: 0.2s;
+        }
+        .room-card:active { transform: scale(0.98); background: white; }
+        .room-info { display: flex; flex-direction: column; text-align: left; }
+        .room-code { font-weight: 800; color: var(--primary); font-size: 14px; }
+        .room-cat { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .room-count { background: var(--dark); color: white; padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+        
+        /* LOBBY */
+        .code-display { font-size: 3.5rem; font-weight: 700; letter-spacing: 2px; margin: 10px 0; color: var(--primary); cursor: pointer; }
+        .player-chip {
+            background: white; padding: 10px 15px; margin: 6px 0; border-radius: 12px;
+            display: flex; align-items: center; gap: 10px; font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .avatar { width: 30px; height: 30px; background: #f1f5f9; border-radius: 50%; display:grid; place-items:center; }
+
+        /* JUEGO & REVELACIÓN */
+        .timer-box { font-size: 4rem; color: white; text-align: center; font-weight: 700; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        
+        .reveal-overlay {
+            background: #1e293b; color: white; border-radius: 20px; padding: 40px 20px;
+            text-align: center; position: relative; overflow: hidden; cursor: pointer;
+            transition: all 0.3s; border: 4px solid #334155; user-select: none;
+        }
+        .reveal-overlay.revealed { background: transparent; border-color: transparent; padding: 0; }
+        
+        .secret-content { display: none; animation: popIn 0.3s ease; }
+        .secret-content.visible { display: block; }
+        
+        .role-card {
+            padding: 30px; border-radius: 24px; text-align: center;
+            color: white; margin-bottom: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .role-impostor { background: linear-gradient(135deg, #f43f5e, #be123c); }
+        .role-crew { background: linear-gradient(135deg, #22c55e, #15803d); }
+        .role-jester { background: linear-gradient(135deg, #d946ef, #a21caf); }
+
+        .word-target {
+            background: white; color: var(--dark); padding: 15px;
+            border-radius: 16px; font-size: 1.8rem; font-weight: 700;
+            margin-top: 15px; transform: rotate(-2deg); box-shadow: 0 5px 0 #e2e8f0;
+        }
+
+        /* RESULTADOS */
+        .result-emoji { font-size: 5rem; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% {transform:translateY(0)} 50% {transform:translateY(-15px)} }
+        .hidden { display: none !important; }
+        .badge { background: var(--dark); color: white; padding: 4px 10px; border-radius: 8px; font-size: 10px; text-transform: uppercase; }
+
+        /* TOAST */
+        #toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #f43f5e; color: white; padding: 10px 20px; border-radius: 50px;
+            font-weight: 700; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 100; opacity: 0; transition: 0.3s; pointer-events: none;
+        }
+        #toast.show { opacity: 1; top: 30px; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Error</div>
+
+    <div class="container">
+        <div id="header-box" class="header">
+            <h1>IMPOSTOR<br><span style="color:var(--accent)">NICO</span></h1>
+        </div>
+
+        <div id="view-menu" class="card">
+            <div style="text-align:center; margin-bottom:15px; opacity:0.6; font-size:12px; font-weight:700;">SELECCIONA UN TEMA</div>
+            <div class="menu-grid">
+                <div class="menu-item" onclick="selectCat('lol')"><div class="menu-icon">⚔️</div><span class="menu-label">LoL</span></div>
+                <div class="menu-item" onclick="selectCat('futbol')"><div class="menu-icon">⚽</div><span class="menu-label">Fútbol</span></div>
+                <div class="menu-item" onclick="selectCat('comida')"><div class="menu-icon">🍕</div><span class="menu-label">Comida</span></div>
+                <div class="menu-item" onclick="selectCat('paises')"><div class="menu-icon">🌍</div><span class="menu-label">Países</span></div>
+                <div class="menu-item" onclick="selectCat('streamers')"><div class="menu-icon">📹</div><span class="menu-label">Streamers</span></div>
+                <div class="menu-item" onclick="selectCat('cine')"><div class="menu-icon">🎬</div><span class="menu-label">Cine</span></div>
+                <div class="menu-item" onclick="selectCat('marcas')"><div class="menu-icon">🏷️</div><span class="menu-label">Marcas</span></div>
+                <div class="menu-item" onclick="selectCat('animales')"><div class="menu-icon">🦁</div><span class="menu-label">Animales</span></div>
+                <div class="menu-item" onclick="selectCat('lugares')"><div class="menu-icon">📍</div><span class="menu-label">Lugares</span></div>
+                <div class="menu-item" onclick="selectCat('cosas')"><div class="menu-icon">📦</div><span class="menu-label">Cosas</span></div>
+            </div>
+        </div>
+
+        <div id="view-login" class="card hidden">
+            <h2 id="cat-title" style="text-align:center; margin:0 0 20px 0; color:var(--primary);">---</h2>
+            
+            <input type="text" id="username" placeholder="TU NOMBRE" autocomplete="off" maxlength="12">
+            <input type="number" id="room" placeholder="CÓDIGO DE SALA" pattern="\d*">
+
+            <div class="toggle-box" onclick="document.getElementById('jester-toggle').click()">
+                <input type="checkbox" id="jester-toggle">
+                <span style="font-weight:700; color:#d946ef;">🤡 Modo Bufón</span>
+            </div>
+
+            <button class="btn btn-primary" onclick="joinGame()">ENTRAR <i data-lucide="arrow-right"></i></button>
+            <button class="btn btn-secondary" onclick="showView('view-menu')">VOLVER</button>
+
+            <div class="rooms-container">
+                <span class="room-label">O ÚNETE A UNA SALA:</span>
+                <div id="active-rooms-list" class="room-list">
+                    <div style="text-align:center; opacity:0.5; font-size:12px; padding:10px;">Buscando...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-lobby" class="card hidden">
+            <div style="text-align:center">
+                <span class="badge">CÓDIGO DE SALA</span>
+                <div id="lobby-code" class="code-display" onclick="copyCode()">---</div>
+                <div id="msg-copy" style="font-size:10px; color:#64748b; margin-bottom:10px;">(Toca para copiar)</div>
+            </div>
+            
+            <div id="player-list" style="max-height: 250px; overflow-y:auto;"></div>
+            
+            <div id="wait-msg" style="text-align:center; opacity:0.6; margin-top:20px; font-weight:600;">
+                <span class="loader">⏳</span> Esperando jugadores...
+            </div>
+            
+            <button id="start-btn" class="btn btn-primary hidden" onclick="startGame()">¡EMPEZAR YA!</button>
+        </div>
+
+        <div id="view-game" class="hidden">
+            <div id="timer" class="timer-box">05:00</div>
+            
+            <div class="card">
+                <div id="reveal-area" class="reveal-overlay">
+                    <i data-lucide="eye-off" size="48" style="margin-bottom:10px; opacity:0.5;"></i><br>
+                    MANTÉN PRESIONADO<br>PARA VER TU ROL
+                </div>
+
+                <div id="secret-info" class="secret-content">
+                    <div id="role-card" class="role-card">
+                        <div style="font-size:12px; opacity:0.8; margin-bottom:5px;">TU ROL</div>
+                        <div id="role-text" style="font-size:2rem; font-weight:800; line-height:1;">---</div>
+                        <div id="word-display" class="word-target">---</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <span class="badge">ORDEN PARA HABLAR</span>
+                    <div id="speak-order" style="margin-top:10px;"></div>
+                </div>
+
+                <button class="btn btn-danger" onclick="forceVote()">🚨 VOTAR AHORA</button>
+            </div>
+        </div>
+
+        <div id="view-voting" class="card hidden">
+            <h2 style="text-align:center; color:var(--primary); margin-top:0;">¿QUIÉN ES?</h2>
+            <p style="text-align:center; opacity:0.6; font-size:14px;">Toca para acusar</p>
+            <div id="vote-list"></div>
+        </div>
+
+        <div id="view-result" class="card hidden" style="text-align:center">
+            <div id="res-emoji" class="result-emoji"></div>
+            <h1 id="res-title" style="color:var(--dark); font-size:2rem; margin:10px 0;"></h1>
+            <p id="res-msg" style="font-size:1.1rem; font-weight:600; color:#475569;"></p>
+            
+            <div style="background:#f1f5f9; padding:15px; border-radius:15px; margin:20px 0;">
+                <span style="font-size:10px; font-weight:700; color:#94a3b8;">EL IMPOSTOR ERA</span><br>
+                <strong id="res-impostor" style="font-size:1.5rem; color:var(--dark);"></strong>
+            </div>
+
+            <button class="btn btn-primary" onclick="location.reload()">JUGAR OTRA VEZ 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let selectedCategory = '';
+        let myRoom = '';
+        const avatars = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🐷','🐸'];
+
+        // --- MANEJO DE VISTAS ---
+        function showView(id) {
+            document.querySelectorAll('.container > div').forEach(d => {
+                if(d.id !== 'header-box' && d.id !== 'toast') d.classList.add('hidden');
+            });
+            if(id === 'view-game') document.getElementById('header-box').classList.add('hidden');
+            else document.getElementById('header-box').classList.remove('hidden');
+
+            document.getElementById(id).classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // --- LOGICA INICIAL ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if(localStorage.getItem('impostor_name')) 
+                document.getElementById('username').value = localStorage.getItem('impostor_name');
+        });
+
+        function selectCat(cat) {
+            selectedCategory = cat;
+            showView('view-login');
+            document.getElementById('cat-title').innerText = "MISIÓN: " + cat.toUpperCase();
+        }
+
+        function selectRoom(code) {
+            const input = document.getElementById('room');
+            input.value = code;
+            input.style.borderColor = "var(--primary)";
+            input.style.transform = "scale(1.05)";
+            setTimeout(() => {
+                input.style.borderColor = "transparent";
+                input.style.transform = "scale(1)";
+            }, 300);
+        }
+
+        function joinGame() {
+            const name = document.getElementById('username').value.trim();
+            const room = document.getElementById('room').value.trim();
+            const jester = document.getElementById('jester-toggle').checked;
+
+            if(!name || !room) return showToast("¡Faltan datos!");
+            
+            localStorage.setItem('impostor_name', name);
+            myRoom = room;
+
+            socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory, withJester: jester });
+        }
+
+        function copyCode() {
+            navigator.clipboard.writeText(myRoom).then(() => {
+                document.getElementById('msg-copy').innerText = "¡Copiado!";
+                setTimeout(() => document.getElementById('msg-copy').innerText = "(Toca para copiar)", 2000);
+            });
+        }
+
+        // --- SOCKET EVENTOS ---
+        socket.on('errorMsg', (msg) => showToast(msg));
+        socket.on('resetToLobby', () => showView('view-menu'));
+
+        // RECIBIR LISTA DE SALAS
+        socket.on('roomsUpdate', (rooms) => {
+            const container = document.getElementById('active-rooms-list');
+            if (rooms.length === 0) {
+                container.innerHTML = `<div style="text-align:center; opacity:0.5; font-size:12px; padding:10px;">No hay salas activas. ¡Crea una!</div>`;
+                return;
+            }
+            container.innerHTML = rooms.map(r => `
+                <div class="room-card" onclick="selectRoom('${r.code}')">
+                    <div class="room-info">
+                        <span class="room-code">SALA ${r.code}</span>
+                        <span class="room-cat">${r.category.toUpperCase()} ${r.jester ? '🤡' : ''}</span>
+                    </div>
+                    <div class="room-count">👤 ${r.count}</div>
+                </div>
+            `).join('');
+        });
+
+        socket.on('updatePlayerList', (data) => {
+            showView('view-lobby');
+            document.getElementById('lobby-code').innerText = myRoom;
+            
+            const list = document.getElementById('player-list');
+            list.innerHTML = data.players.map((p, i) => `
+                <div class="player-chip">
+                    <div class="avatar">${avatars[i % avatars.length]}</div>
+                    ${p.name}
+                </div>
+            `).join('');
+
+            if(data.players.length >= 3) {
+                document.getElementById('start-btn').classList.remove('hidden');
+                document.getElementById('wait-msg').classList.add('hidden');
+            } else {
+                document.getElementById('start-btn').classList.add('hidden');
+                document.getElementById('wait-msg').classList.remove('hidden');
+            }
+        });
+
+        function startGame() { socket.emit('startGame', myRoom); }
+        function forceVote() { socket.emit('forceVote', myRoom); }
+
+        // --- LÓGICA DE JUEGO & REVELAR ROL ---
+        const revealBtn = document.getElementById('reveal-area');
+        const secretContent = document.getElementById('secret-info');
+
+        const showSecret = () => {
+            revealBtn.classList.add('revealed');
+            revealBtn.innerHTML = "";
+            secretContent.classList.add('visible');
+        };
+        const hideSecret = () => {
+            revealBtn.classList.remove('revealed');
+            revealBtn.innerHTML = `<i data-lucide="eye-off"></i><br>MANTÉN PRESIONADO`;
+            secretContent.classList.remove('visible');
+            lucide.createIcons();
+        };
+
+        ['mousedown', 'touchstart'].forEach(evt => revealBtn.addEventListener(evt, (e) => {
+            e.preventDefault(); showSecret();
+        }));
+        ['mouseup', 'mouseleave', 'touchend'].forEach(evt => revealBtn.addEventListener(evt, (e) => {
+            e.preventDefault(); hideSecret();
+        }));
+
+        socket.on('gameStarted', (data) => {
+            showView('view-game');
+            const card = document.getElementById('role-card');
+            const roleTxt = document.getElementById('role-text');
+            const wordTxt = document.getElementById('word-display');
+
+            card.className = 'role-card'; 
+            
+            if(data.role === 'impostor') {
+                card.classList.add('role-impostor');
+                roleTxt.innerText = "IMPOSTOR";
+                wordTxt.innerText = "???";
+            } else if (data.role === 'jester') {
+                card.classList.add('role-jester');
+                roleTxt.innerText = "BUFÓN";
+                wordTxt.innerText = "Palabra: " + data.word;
+            } else {
+                card.classList.add('role-crew');
+                roleTxt.innerText = "TRIPULANTE";
+                wordTxt.innerText = data.word;
+            }
+
+            document.getElementById('speak-order').innerHTML = data.order.map((n, i) => 
+                `<div class="player-chip" style="font-size:14px; padding:8px;">
+                    <span style="color:var(--primary); margin-right:5px;">${i+1}.</span> ${n}
+                </div>`
+            ).join('');
+        });
+
+        socket.on('timerUpdate', (sec) => {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            const t = document.getElementById('timer');
+            t.innerText = `${m}:${s<10?'0':''}${s}`;
+            t.style.color = sec < 10 ? '#f43f5e' : 'white';
+        });
+
+        socket.on('startVoting', (players) => {
+            showView('view-voting');
+            document.getElementById('vote-list').innerHTML = players.map((p, i) => `
+                <div class="player-chip" onclick="sendVote(this, '${p.id}')" style="cursor:pointer; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="avatar">${avatars[i % avatars.length]}</div>
+                        ${p.name}
+                    </div>
+                    <i data-lucide="fingerprint"></i>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        });
+
+        function sendVote(el, id) {
+            el.style.background = "#e0e7ff";
+            el.style.border = "2px solid var(--primary)";
+            el.style.pointerEvents = "none";
+            socket.emit('submitVote', { roomCode: myRoom, targetId: id });
+        }
+
+        socket.on('gameEnded', (data) => {
+            showView('view-result');
+            const title = document.getElementById('res-title');
+            const emoji = document.getElementById('res-emoji');
+
+            if (data.winnerKey === 'impostor') {
+                title.innerText = "Ganan Impostores";
+                title.style.color = "#f43f5e";
+                emoji.innerText = "😈";
+            } else if (data.winnerKey === 'jester') {
+                title.innerText = "¡Gana el Bufón!";
+                title.style.color = "#d946ef";
+                emoji.innerText = "🤡";
+            } else {
+                title.innerText = "Ganan Ciudadanos";
+                title.style.color = "#22c55e";
+                emoji.innerText = "🏆";
+                triggerConfetti();
+            }
+
+            document.getElementById('res-msg').innerText = data.message;
+            document.getElementById('res-impostor').innerText = data.impostorName;
+        });
+
+        function triggerConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+    </script>
+</body>
+</html>
             cursor: pointer; margin-bottom: 15px; border: 2px dashed #f0abfc;
         }
         .toggle-box input { width: auto; margin: 0; }
