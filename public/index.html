@@ -27,7 +27,6 @@
 
         body {
             font-family: var(--font);
-            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%); 
             background: linear-gradient(-45deg, #667eea, #764ba2, #6B8DD6, #8E37D7);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
@@ -107,7 +106,7 @@
         }
         .toggle-box input { width: auto; margin: 0; }
 
-        /* LISTA DE SALAS (NUEVO) */
+        /* LISTA DE SALAS */
         .rooms-container { margin-top: 25px; width: 100%; padding-top: 15px; border-top: 2px dashed rgba(0,0,0,0.1); }
         .room-label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block; text-align: center; }
         .room-list { display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; }
@@ -130,7 +129,21 @@
             display: flex; align-items: center; gap: 10px; font-weight: 600;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
+        .player-chip.is-host { border: 2px solid #f59e0b; }
         .avatar { width: 30px; height: 30px; background: #f1f5f9; border-radius: 50%; display:grid; place-items:center; }
+        .host-badge {
+            margin-left: auto; background: #fef3c7; color: #92400e;
+            padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700;
+        }
+
+        /* HOST INDICATOR */
+        .host-indicator {
+            background: #fef3c7; border: 2px solid #f59e0b;
+            border-radius: 12px; padding: 10px 14px;
+            font-size: 14px; font-weight: 700; color: #92400e;
+            text-align: center; margin-bottom: 12px;
+            display: none;
+        }
 
         /* JUEGO & REVELACIÓN */
         .timer-box { font-size: 4rem; color: white; text-align: center; font-weight: 700; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
@@ -173,6 +186,12 @@
             z-index: 100; opacity: 0; transition: 0.3s; pointer-events: none;
         }
         #toast.show { opacity: 1; top: 30px; }
+
+        /* VOTE PROGRESS */
+        .vote-progress {
+            text-align: center; font-size: 14px; font-weight: 700;
+            color: #64748b; margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -184,6 +203,7 @@
             <h1>IMPOSTOR<br><span style="color:var(--accent)">NICO</span></h1>
         </div>
 
+        <!-- PANTALLA 1: CATEGORÍAS -->
         <div id="view-menu" class="card">
             <div style="text-align:center; margin-bottom:15px; opacity:0.6; font-size:12px; font-weight:700;">SELECCIONA UN TEMA</div>
             <div class="menu-grid">
@@ -200,11 +220,13 @@
             </div>
         </div>
 
+        <!-- PANTALLA 2: LOGIN -->
         <div id="view-login" class="card hidden">
             <h2 id="cat-title" style="text-align:center; margin:0 0 20px 0; color:var(--primary);">---</h2>
             
-            <input type="text" id="username" placeholder="TU NOMBRE" autocomplete="off" maxlength="12">
-            <input type="number" id="room" placeholder="CÓDIGO DE SALA" pattern="\d*">
+            <input type="text" id="username" placeholder="TU NOMBRE" autocomplete="off" maxlength="20">
+            <input type="text" id="room" placeholder="CÓDIGO (vacío = nueva sala)"
+                style="text-transform:uppercase;letter-spacing:3px;" maxlength="6" autocomplete="off">
 
             <div class="toggle-box" onclick="document.getElementById('jester-toggle').click()">
                 <input type="checkbox" id="jester-toggle">
@@ -222,22 +244,26 @@
             </div>
         </div>
 
+        <!-- PANTALLA 3: LOBBY -->
         <div id="view-lobby" class="card hidden">
             <div style="text-align:center">
                 <span class="badge">CÓDIGO DE SALA</span>
                 <div id="lobby-code" class="code-display" onclick="copyCode()">---</div>
                 <div id="msg-copy" style="font-size:10px; color:#64748b; margin-bottom:10px;">(Toca para copiar)</div>
             </div>
+
+            <div id="lobby-host-indicator" class="host-indicator">⭐ Sos el host — vos iniciás la partida</div>
             
             <div id="player-list" style="max-height: 250px; overflow-y:auto;"></div>
             
             <div id="wait-msg" style="text-align:center; opacity:0.6; margin-top:20px; font-weight:600;">
-                <span class="loader">⏳</span> Esperando jugadores...
+                <span>⏳</span> Esperando jugadores...
             </div>
             
             <button id="start-btn" class="btn btn-primary hidden" onclick="startGame()">¡EMPEZAR YA!</button>
         </div>
 
+        <!-- PANTALLA 4: JUEGO -->
         <div id="view-game" class="hidden">
             <div id="timer" class="timer-box">05:00</div>
             
@@ -260,16 +286,28 @@
                     <div id="speak-order" style="margin-top:10px;"></div>
                 </div>
 
-                <button class="btn btn-danger" onclick="forceVote()">🚨 VOTAR AHORA</button>
+                <div id="game-host-indicator" class="host-indicator" style="margin-top:15px;">⭐ Sos el host</div>
+                <div id="game-host-btns" style="display:none">
+                    <button class="btn btn-danger" onclick="forceVote()">🚨 VOTAR AHORA</button>
+                </div>
+                <div id="game-guest-msg" style="display:none; text-align:center; opacity:0.6; margin-top:15px; font-weight:600;">
+                    Charlá, preguntá, desconfiá 🧐
+                </div>
             </div>
         </div>
 
+        <!-- PANTALLA 5: VOTACIÓN -->
         <div id="view-voting" class="card hidden">
             <h2 style="text-align:center; color:var(--primary); margin-top:0;">¿QUIÉN ES?</h2>
             <p style="text-align:center; opacity:0.6; font-size:14px;">Toca para acusar</p>
+            <div id="vote-progress" class="vote-progress">Votos: 0 / ?</div>
             <div id="vote-list"></div>
+            <div id="vote-sent-msg" style="display:none; text-align:center; margin-top:12px; font-weight:700; color:#22c55e;">
+                ✅ Voto enviado — esperando a los demás...
+            </div>
         </div>
 
+        <!-- PANTALLA 6: RESULTADO -->
         <div id="view-result" class="card hidden" style="text-align:center">
             <div id="res-emoji" class="result-emoji"></div>
             <h1 id="res-title" style="color:var(--dark); font-size:2rem; margin:10px 0;"></h1>
@@ -288,16 +326,17 @@
         const socket = io();
         let selectedCategory = '';
         let myRoom = '';
+        let myVote = null;
+        let isHost = false;
         const avatars = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🐷','🐸'];
 
-        // --- MANEJO DE VISTAS ---
+        // --- VISTAS ---
         function showView(id) {
             document.querySelectorAll('.container > div').forEach(d => {
-                if(d.id !== 'header-box' && d.id !== 'toast') d.classList.add('hidden');
+                if (d.id !== 'header-box' && d.id !== 'toast') d.classList.add('hidden');
             });
-            if(id === 'view-game') document.getElementById('header-box').classList.add('hidden');
+            if (id === 'view-game') document.getElementById('header-box').classList.add('hidden');
             else document.getElementById('header-box').classList.remove('hidden');
-
             document.getElementById(id).classList.remove('hidden');
             lucide.createIcons();
         }
@@ -309,12 +348,12 @@
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        // --- LOGICA INICIAL ---
         document.addEventListener('DOMContentLoaded', () => {
-            if(localStorage.getItem('impostor_name')) 
+            if (localStorage.getItem('impostor_name'))
                 document.getElementById('username').value = localStorage.getItem('impostor_name');
         });
 
+        // --- CATEGORÍA ---
         function selectCat(cat) {
             selectedCategory = cat;
             showView('view-login');
@@ -332,16 +371,24 @@
             }, 300);
         }
 
+        // --- JOIN ---
         function joinGame() {
-            const name = document.getElementById('username').value.trim();
-            const room = document.getElementById('room').value.trim();
+            const name   = document.getElementById('username').value.trim();
+            let   room   = document.getElementById('room').value.trim().toUpperCase();
             const jester = document.getElementById('jester-toggle').checked;
 
-            if(!name || !room) return showToast("¡Faltan datos!");
-            
-            localStorage.setItem('impostor_name', name);
-            myRoom = room;
+            if (!name) return showToast("¡Falta el nombre!");
 
+            localStorage.setItem('impostor_name', name);
+
+            // Si no hay código, generar uno nuevo y ser host
+            if (!room) {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                room = Array.from({length: 5}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+                isHost = true;
+            }
+
+            myRoom = room;
             socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory, withJester: jester });
         }
 
@@ -354,13 +401,18 @@
 
         // --- SOCKET EVENTOS ---
         socket.on('errorMsg', (msg) => showToast(msg));
-        socket.on('resetToLobby', () => showView('view-menu'));
 
-        // RECIBIR LISTA DE SALAS
+        socket.on('resetToLobby', () => {
+            myVote = null;
+            showView('view-lobby');
+            showToast('Volviendo al lobby...');
+        });
+
+        // Lista de salas
         socket.on('roomsUpdate', (rooms) => {
             const container = document.getElementById('active-rooms-list');
             if (rooms.length === 0) {
-                container.innerHTML = `<div style="text-align:center; opacity:0.5; font-size:12px; padding:10px;">No hay salas activas. ¡Crea una!</div>`;
+                container.innerHTML = `<div style="text-align:center; opacity:0.5; font-size:12px; padding:10px;">No hay salas. ¡Crea una dejando el código vacío!</div>`;
                 return;
             }
             container.innerHTML = rooms.map(r => `
@@ -374,32 +426,55 @@
             `).join('');
         });
 
+        // Lista de jugadores en lobby
         socket.on('updatePlayerList', (data) => {
             showView('view-lobby');
             document.getElementById('lobby-code').innerText = myRoom;
-            
+
             const list = document.getElementById('player-list');
             list.innerHTML = data.players.map((p, i) => `
-                <div class="player-chip">
+                <div class="player-chip ${i === 0 ? 'is-host' : ''}">
                     <div class="avatar">${avatars[i % avatars.length]}</div>
                     ${p.name}
+                    ${i === 0 ? '<span class="host-badge">⭐ HOST</span>' : ''}
                 </div>
             `).join('');
 
-            if(data.players.length >= 3) {
-                document.getElementById('start-btn').classList.remove('hidden');
-                document.getElementById('wait-msg').classList.add('hidden');
+            // HOST: mostrar indicador y botón arrancar
+            if (isHost) {
+                document.getElementById('lobby-host-indicator').style.display = 'block';
+                if (data.players.length >= 3) {
+                    document.getElementById('start-btn').classList.remove('hidden');
+                    document.getElementById('wait-msg').classList.add('hidden');
+                } else {
+                    document.getElementById('start-btn').classList.add('hidden');
+                    document.getElementById('wait-msg').classList.remove('hidden');
+                }
             } else {
+                document.getElementById('lobby-host-indicator').style.display = 'none';
                 document.getElementById('start-btn').classList.add('hidden');
                 document.getElementById('wait-msg').classList.remove('hidden');
             }
         });
 
+        // Host transferido
+        socket.on('youAreHost', () => {
+            isHost = true;
+            showToast('⭐ ¡Ahora sos el host!');
+            document.getElementById('lobby-host-indicator').style.display = 'block';
+            document.getElementById('game-host-indicator').style.display  = 'block';
+            document.getElementById('game-host-btns').style.display       = 'block';
+            document.getElementById('game-guest-msg').style.display       = 'none';
+            // Revisar si ya hay suficientes jugadores para mostrar el botón
+            const chips = document.querySelectorAll('#player-list .player-chip');
+            if (chips.length >= 3) document.getElementById('start-btn').classList.remove('hidden');
+        });
+
         function startGame() { socket.emit('startGame', myRoom); }
         function forceVote() { socket.emit('forceVote', myRoom); }
 
-        // --- LÓGICA DE JUEGO & REVELAR ROL ---
-        const revealBtn = document.getElementById('reveal-area');
+        // --- REVEAL (hold) ---
+        const revealBtn    = document.getElementById('reveal-area');
         const secretContent = document.getElementById('secret-info');
 
         const showSecret = () => {
@@ -421,15 +496,17 @@
             e.preventDefault(); hideSecret();
         }));
 
+        // --- JUEGO ---
         socket.on('gameStarted', (data) => {
+            myVote = null;
             showView('view-game');
-            const card = document.getElementById('role-card');
+            const card    = document.getElementById('role-card');
             const roleTxt = document.getElementById('role-text');
             const wordTxt = document.getElementById('word-display');
 
-            card.className = 'role-card'; 
-            
-            if(data.role === 'impostor') {
+            card.className = 'role-card';
+
+            if (data.role === 'impostor') {
                 card.classList.add('role-impostor');
                 roleTxt.innerText = "IMPOSTOR";
                 wordTxt.innerText = "???";
@@ -443,23 +520,39 @@
                 wordTxt.innerText = data.word;
             }
 
-            document.getElementById('speak-order').innerHTML = data.order.map((n, i) => 
+            document.getElementById('speak-order').innerHTML = data.order.map((n, i) =>
                 `<div class="player-chip" style="font-size:14px; padding:8px;">
                     <span style="color:var(--primary); margin-right:5px;">${i+1}.</span> ${n}
                 </div>`
             ).join('');
+
+            // Host vs guest
+            if (isHost) {
+                document.getElementById('game-host-indicator').style.display = 'block';
+                document.getElementById('game-host-btns').style.display      = 'block';
+                document.getElementById('game-guest-msg').style.display      = 'none';
+            } else {
+                document.getElementById('game-host-indicator').style.display = 'none';
+                document.getElementById('game-host-btns').style.display      = 'none';
+                document.getElementById('game-guest-msg').style.display      = 'block';
+            }
         });
 
         socket.on('timerUpdate', (sec) => {
             const m = Math.floor(sec / 60);
             const s = sec % 60;
             const t = document.getElementById('timer');
-            t.innerText = `${m}:${s<10?'0':''}${s}`;
+            t.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
             t.style.color = sec < 10 ? '#f43f5e' : 'white';
         });
 
+        // --- VOTACIÓN ---
         socket.on('startVoting', (players) => {
+            myVote = null;
             showView('view-voting');
+            document.getElementById('vote-sent-msg').style.display = 'none';
+            document.getElementById('vote-progress').innerText = `Votos: 0 / ${players.length}`;
+
             document.getElementById('vote-list').innerHTML = players.map((p, i) => `
                 <div class="player-chip" onclick="sendVote(this, '${p.id}')" style="cursor:pointer; justify-content:space-between;">
                     <div style="display:flex; align-items:center; gap:10px;">
@@ -472,20 +565,29 @@
             lucide.createIcons();
         });
 
+        socket.on('voteProgress', ({ totalVotes, totalPlayers }) => {
+            document.getElementById('vote-progress').innerText = `Votos: ${totalVotes} / ${totalPlayers}`;
+        });
+
         function sendVote(el, id) {
+            if (myVote !== null) return;
+            myVote = id;
             el.style.background = "#e0e7ff";
             el.style.border = "2px solid var(--primary)";
-            el.style.pointerEvents = "none";
+            // Deshabilitar todos los chips
+            document.querySelectorAll('#vote-list .player-chip').forEach(c => c.style.pointerEvents = 'none');
+            document.getElementById('vote-sent-msg').style.display = 'block';
             socket.emit('submitVote', { roomCode: myRoom, targetId: id });
         }
 
+        // --- RESULTADO ---
         socket.on('gameEnded', (data) => {
             showView('view-result');
-            const title = document.getElementById('res-title');
-            const emoji = document.getElementById('res-emoji');
+            const title  = document.getElementById('res-title');
+            const emoji  = document.getElementById('res-emoji');
 
             if (data.winnerKey === 'impostor') {
-                title.innerText = "Ganan Impostores";
+                title.innerText = "Ganan los Impostores";
                 title.style.color = "#f43f5e";
                 emoji.innerText = "😈";
             } else if (data.winnerKey === 'jester') {
@@ -493,28 +595,31 @@
                 title.style.color = "#d946ef";
                 emoji.innerText = "🤡";
             } else {
-                title.innerText = "Ganan Ciudadanos";
+                title.innerText = "¡Ganan los Ciudadanos!";
                 title.style.color = "#22c55e";
                 emoji.innerText = "🏆";
                 triggerConfetti();
             }
 
-            document.getElementById('res-msg').innerText = data.message;
+            document.getElementById('res-msg').innerText      = data.message;
             document.getElementById('res-impostor').innerText = data.impostorName;
         });
 
+        // --- CONFETTI ---
         function triggerConfetti() {
-            var duration = 3 * 1000;
+            var duration  = 3 * 1000;
             var animationEnd = Date.now() + duration;
-            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-            var interval = setInterval(function() {
+            var defaults  = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            var interval  = setInterval(function() {
                 var timeLeft = animationEnd - Date.now();
                 if (timeLeft <= 0) return clearInterval(interval);
                 var particleCount = 50 * (timeLeft / duration);
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
             }, 250);
         }
+
+        // --- CATEGORIA CHANGED ---
+        socket.on('categoryChanged', (cat) => showToast('Categoría: ' + cat.toUpperCase()));
     </script>
 </body>
 </html>
