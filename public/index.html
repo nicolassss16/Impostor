@@ -39,7 +39,6 @@
 
         .container { width: 100%; max-width: 420px; position: relative; z-index: 10; padding-bottom: 50px;}
 
-        /* TÍTULO ESTILO CARTOON */
         .header { text-align: center; margin-bottom: 25px; animation: float 6s ease-in-out infinite; }
         h1 {
             font-size: 3.5rem; margin: 0; line-height: 0.9;
@@ -50,7 +49,6 @@
         }
         @keyframes float { 0%, 100% {transform:translateY(0)} 50% {transform:translateY(-10px)} }
 
-        /* EFECTO CRISTAL (GLASSMORPHISM) */
         .card {
             background: var(--glass);
             backdrop-filter: blur(12px);
@@ -62,7 +60,6 @@
         }
         @keyframes slideUp { from {opacity:0; transform:translateY(20px)} to {opacity:1; transform:translateY(0)} }
 
-        /* GRID DE CATEGORÍAS */
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .menu-item {
             background: white; border-radius: 18px; padding: 15px;
@@ -74,7 +71,6 @@
         .menu-icon { font-size: 32px; margin-bottom: 5px; }
         .menu-label { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; }
 
-        /* FORMULARIOS */
         input {
             width: 100%; padding: 16px; margin-bottom: 12px;
             border: 3px solid transparent; background: rgba(255,255,255,0.6);
@@ -83,7 +79,6 @@
         }
         input:focus { background: white; border-color: var(--primary); transform: scale(1.02); }
 
-        /* BOTONES PRINCIPALES */
         .btn {
             width: 100%; padding: 16px; border: none; border-radius: 18px;
             font-family: var(--font); font-size: 18px; font-weight: 700;
@@ -98,7 +93,6 @@
         .btn-secondary { background: #94a3b8; box-shadow: 0 4px 0 #64748b; }
         .btn-danger { background: #f43f5e; box-shadow: 0 4px 0 #be123c; }
 
-        /* CHECKBOX CUSTOM */
         .toggle-box {
             background: rgba(255,255,255,0.5); padding: 12px; border-radius: 16px;
             display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -106,7 +100,6 @@
         }
         .toggle-box input { width: auto; margin: 0; }
 
-        /* LISTA DE SALAS */
         .rooms-container { margin-top: 25px; width: 100%; padding-top: 15px; border-top: 2px dashed rgba(0,0,0,0.1); }
         .room-label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block; text-align: center; }
         .room-list { display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; }
@@ -122,7 +115,6 @@
         .room-cat { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; }
         .room-count { background: var(--dark); color: white; padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; }
         
-        /* LOBBY */
         .code-display { font-size: 3.5rem; font-weight: 700; letter-spacing: 2px; margin: 10px 0; color: var(--primary); cursor: pointer; }
         .player-chip {
             background: white; padding: 10px 15px; margin: 6px 0; border-radius: 12px;
@@ -136,7 +128,6 @@
             padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700;
         }
 
-        /* HOST INDICATOR */
         .host-indicator {
             background: #fef3c7; border: 2px solid #f59e0b;
             border-radius: 12px; padding: 10px 14px;
@@ -145,7 +136,6 @@
             display: none;
         }
 
-        /* JUEGO & REVELACIÓN */
         .timer-box { font-size: 4rem; color: white; text-align: center; font-weight: 700; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         
         .reveal-overlay {
@@ -172,13 +162,11 @@
             margin-top: 15px; transform: rotate(-2deg); box-shadow: 0 5px 0 #e2e8f0;
         }
 
-        /* RESULTADOS */
         .result-emoji { font-size: 5rem; animation: bounce 1s infinite; }
         @keyframes bounce { 0%, 100% {transform:translateY(0)} 50% {transform:translateY(-15px)} }
         .hidden { display: none !important; }
         .badge { background: var(--dark); color: white; padding: 4px 10px; border-radius: 8px; font-size: 10px; text-transform: uppercase; }
 
-        /* TOAST */
         #toast {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background: #f43f5e; color: white; padding: 10px 20px; border-radius: 50px;
@@ -187,7 +175,6 @@
         }
         #toast.show { opacity: 1; top: 30px; }
 
-        /* VOTE PROGRESS */
         .vote-progress {
             text-align: center; font-size: 14px; font-weight: 700;
             color: #64748b; margin-bottom: 10px;
@@ -330,7 +317,6 @@
         let isHost = false;
         const avatars = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🐷','🐸'];
 
-        // --- VISTAS ---
         function showView(id) {
             document.querySelectorAll('.container > div').forEach(d => {
                 if (d.id !== 'header-box' && d.id !== 'toast') d.classList.add('hidden');
@@ -353,7 +339,6 @@
                 document.getElementById('username').value = localStorage.getItem('impostor_name');
         });
 
-        // --- CATEGORÍA ---
         function selectCat(cat) {
             selectedCategory = cat;
             showView('view-login');
@@ -371,24 +356,21 @@
             }, 300);
         }
 
-        // --- JOIN ---
         function joinGame() {
             const name   = document.getElementById('username').value.trim();
             let   room   = document.getElementById('room').value.trim().toUpperCase();
             const jester = document.getElementById('jester-toggle').checked;
 
             if (!name) return showToast("¡Falta el nombre!");
-
             localStorage.setItem('impostor_name', name);
 
-            // Si no hay código, generar uno nuevo y ser host
             if (!room) {
                 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
                 room = Array.from({length: 5}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-                isHost = true;
             }
 
             myRoom = room;
+            // FIX: NO asumimos isHost en el cliente — el servidor nos lo dice via hostId
             socket.emit('joinRoom', { roomCode: myRoom, username: name, category: selectedCategory, withJester: jester });
         }
 
@@ -399,7 +381,6 @@
             });
         }
 
-        // --- SOCKET EVENTOS ---
         socket.on('errorMsg', (msg) => showToast(msg));
 
         socket.on('resetToLobby', () => {
@@ -408,7 +389,6 @@
             showToast('Volviendo al lobby...');
         });
 
-        // Lista de salas
         socket.on('roomsUpdate', (rooms) => {
             const container = document.getElementById('active-rooms-list');
             if (rooms.length === 0) {
@@ -426,21 +406,22 @@
             `).join('');
         });
 
-        // Lista de jugadores en lobby
+        // FIX PRINCIPAL: isHost se determina desde el servidor, no el cliente
         socket.on('updatePlayerList', (data) => {
             showView('view-lobby');
             document.getElementById('lobby-code').innerText = myRoom;
 
+            isHost = (data.hostId === socket.id);
+
             const list = document.getElementById('player-list');
             list.innerHTML = data.players.map((p, i) => `
-                <div class="player-chip ${i === 0 ? 'is-host' : ''}">
+                <div class="player-chip ${p.id === data.hostId ? 'is-host' : ''}">
                     <div class="avatar">${avatars[i % avatars.length]}</div>
                     ${p.name}
-                    ${i === 0 ? '<span class="host-badge">⭐ HOST</span>' : ''}
+                    ${p.id === data.hostId ? '<span class="host-badge">⭐ HOST</span>' : ''}
                 </div>
             `).join('');
 
-            // HOST: mostrar indicador y botón arrancar
             if (isHost) {
                 document.getElementById('lobby-host-indicator').style.display = 'block';
                 if (data.players.length >= 3) {
@@ -457,7 +438,6 @@
             }
         });
 
-        // Host transferido
         socket.on('youAreHost', () => {
             isHost = true;
             showToast('⭐ ¡Ahora sos el host!');
@@ -465,7 +445,6 @@
             document.getElementById('game-host-indicator').style.display  = 'block';
             document.getElementById('game-host-btns').style.display       = 'block';
             document.getElementById('game-guest-msg').style.display       = 'none';
-            // Revisar si ya hay suficientes jugadores para mostrar el botón
             const chips = document.querySelectorAll('#player-list .player-chip');
             if (chips.length >= 3) document.getElementById('start-btn').classList.remove('hidden');
         });
@@ -473,8 +452,7 @@
         function startGame() { socket.emit('startGame', myRoom); }
         function forceVote() { socket.emit('forceVote', myRoom); }
 
-        // --- REVEAL (hold) ---
-        const revealBtn    = document.getElementById('reveal-area');
+        const revealBtn     = document.getElementById('reveal-area');
         const secretContent = document.getElementById('secret-info');
 
         const showSecret = () => {
@@ -496,10 +474,13 @@
             e.preventDefault(); hideSecret();
         }));
 
-        // --- JUEGO ---
+        // FIX: recibir hostId en gameStarted para actualizar isHost en pantalla de juego
         socket.on('gameStarted', (data) => {
             myVote = null;
             showView('view-game');
+
+            isHost = (data.hostId === socket.id);
+
             const card    = document.getElementById('role-card');
             const roleTxt = document.getElementById('role-text');
             const wordTxt = document.getElementById('word-display');
@@ -526,7 +507,6 @@
                 </div>`
             ).join('');
 
-            // Host vs guest
             if (isHost) {
                 document.getElementById('game-host-indicator').style.display = 'block';
                 document.getElementById('game-host-btns').style.display      = 'block';
@@ -546,7 +526,6 @@
             t.style.color = sec < 10 ? '#f43f5e' : 'white';
         });
 
-        // --- VOTACIÓN ---
         socket.on('startVoting', (players) => {
             myVote = null;
             showView('view-voting');
@@ -574,17 +553,15 @@
             myVote = id;
             el.style.background = "#e0e7ff";
             el.style.border = "2px solid var(--primary)";
-            // Deshabilitar todos los chips
             document.querySelectorAll('#vote-list .player-chip').forEach(c => c.style.pointerEvents = 'none');
             document.getElementById('vote-sent-msg').style.display = 'block';
             socket.emit('submitVote', { roomCode: myRoom, targetId: id });
         }
 
-        // --- RESULTADO ---
         socket.on('gameEnded', (data) => {
             showView('view-result');
-            const title  = document.getElementById('res-title');
-            const emoji  = document.getElementById('res-emoji');
+            const title = document.getElementById('res-title');
+            const emoji = document.getElementById('res-emoji');
 
             if (data.winnerKey === 'impostor') {
                 title.innerText = "Ganan los Impostores";
@@ -605,12 +582,11 @@
             document.getElementById('res-impostor').innerText = data.impostorName;
         });
 
-        // --- CONFETTI ---
         function triggerConfetti() {
-            var duration  = 3 * 1000;
+            var duration     = 3 * 1000;
             var animationEnd = Date.now() + duration;
-            var defaults  = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-            var interval  = setInterval(function() {
+            var defaults     = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            var interval = setInterval(function() {
                 var timeLeft = animationEnd - Date.now();
                 if (timeLeft <= 0) return clearInterval(interval);
                 var particleCount = 50 * (timeLeft / duration);
@@ -618,7 +594,6 @@
             }, 250);
         }
 
-        // --- CATEGORIA CHANGED ---
         socket.on('categoryChanged', (cat) => showToast('Categoría: ' + cat.toUpperCase()));
     </script>
 </body>
