@@ -87,11 +87,9 @@ const wordPacks = {
     ]
 };
 
-// Estado del servidor
 let rooms = {};
-const GAME_DURATION = 300; // 5 minutos en segundos
+const GAME_DURATION = 300;
 
-// Función para enviar la lista de salas disponibles a todos
 function broadcastRoomList() {
     const publicRooms = [];
     for (const [code, room] of Object.entries(rooms)) {
@@ -112,20 +110,17 @@ io.on('connection', (socket) => {
 
     // 1. UNIRSE A SALA
     socket.on('joinRoom', ({ roomCode, username, category, withJester }) => {
-        // --- FIX: Validar nombre de usuario ---
         if (!username || !username.trim() || username.trim().length > 20) {
             socket.emit('errorMsg', 'Nombre de usuario inválido (máximo 20 caracteres).');
             return;
         }
         const cleanName = username.trim();
 
-        // Evitar unirse a partidas iniciadas
         if (rooms[roomCode] && rooms[roomCode].status !== 'lobby') {
             socket.emit('errorMsg', '¡La partida ya comenzó!');
             return;
         }
 
-        // --- FIX: Evitar que el mismo socket o nombre se una dos veces ---
         if (rooms[roomCode]) {
             const alreadyIn = rooms[roomCode].players.some(
                 p => p.id === socket.id || p.name === cleanName
@@ -138,7 +133,6 @@ io.on('connection', (socket) => {
 
         socket.join(roomCode);
 
-        // Crear sala si no existe
         if (!rooms[roomCode]) {
             rooms[roomCode] = {
                 players: [],
@@ -148,15 +142,14 @@ io.on('connection', (socket) => {
                 impostorId: null,
                 jesterId: null,
                 jesterActive: withJester,
-                secretWord: null,        // FIX: campo para persistir la palabra
-                hostId: socket.id,       // FIX: guardar quién es el host
+                secretWord: null,
+                hostId: socket.id,
                 timer: null,
                 timeLeft: GAME_DURATION,
                 votes: {},
-                votedPlayers: new Set()  // FIX: control de votos únicos por jugador
+                votedPlayers: new Set()
             };
         } else {
-            // --- FIX: Solo el host puede cambiar la categoría o ajustes ---
             if (socket.id === rooms[roomCode].hostId) {
                 if (category && wordPacks[category]) {
                     rooms[roomCode].category = category;
@@ -171,9 +164,11 @@ io.on('connection', (socket) => {
 
         rooms[roomCode].players.push({ id: socket.id, name: cleanName });
 
+        // FIX: enviar hostId para que el cliente sepa quién es host
         io.to(roomCode).emit('updatePlayerList', {
             players: rooms[roomCode].players,
-            jesterActive: rooms[roomCode].jesterActive
+            jesterActive: rooms[roomCode].jesterActive,
+            hostId: rooms[roomCode].hostId
         });
 
         broadcastRoomList();
@@ -184,7 +179,6 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room || room.players.length < 3) return;
 
-        // --- FIX: Solo el host puede iniciar ---
         if (room.hostId !== socket.id) {
             socket.emit('errorMsg', 'Solo el host puede iniciar la partida.');
             return;
@@ -192,17 +186,14 @@ io.on('connection', (socket) => {
 
         room.status = 'playing';
 
-        // Elegir palabra y persistirla en la sala
         const words = room.deck.length > 0 ? room.deck : [...wordPacks[room.category]];
         const secretWord = words[Math.floor(Math.random() * words.length)];
-        room.secretWord = secretWord; // FIX: guardar la palabra en el estado de la sala
+        room.secretWord = secretWord;
 
-        // Asignar roles
         const playerIds = room.players.map(p => p.id);
         const impostorIndex = Math.floor(Math.random() * playerIds.length);
         room.impostorId = playerIds[impostorIndex];
 
-        // Asignar Bufón (solo si hay 4+ jugadores y está activado)
         room.jesterId = null;
         if (room.jesterActive && playerIds.length >= 4) {
             let jesterIndex;
@@ -212,10 +203,8 @@ io.on('connection', (socket) => {
             room.jesterId = playerIds[jesterIndex];
         }
 
-        // Orden de turnos aleatorio
         const turnOrder = [...room.players].sort(() => Math.random() - 0.5).map(p => p.name);
 
-        // Enviar roles individuales
         room.players.forEach(player => {
             let role = 'crew';
             let wordToSend = secretWord;
@@ -231,13 +220,13 @@ io.on('connection', (socket) => {
             io.to(player.id).emit('gameStarted', {
                 role: role,
                 word: wordToSend,
-                order: turnOrder
+                order: turnOrder,
+                hostId: room.hostId  // FIX: enviar hostId al iniciar juego
             });
         });
 
         broadcastRoomList();
 
-        // Timer
         clearInterval(room.timer);
         room.timeLeft = GAME_DURATION;
         room.timer = setInterval(() => {
@@ -252,8 +241,6 @@ io.on('connection', (socket) => {
     });
 
     // 3. VOTACIÓN
-
-    // --- FIX: Solo el host puede forzar la votación ---
     socket.on('forceVote', (roomCode) => {
         const room = rooms[roomCode];
         if (!room) return;
@@ -268,10 +255,8 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room || room.status !== 'voting') return;
 
-        // --- FIX: Evitar votos múltiples del mismo jugador ---
         if (room.votedPlayers.has(socket.id)) return;
 
-        // Verificar que quien vota es un jugador activo en la sala
         const isPlayer = room.players.some(p => p.id === socket.id);
         if (!isPlayer) return;
 
@@ -280,7 +265,6 @@ io.on('connection', (socket) => {
         if (!room.votes[targetId]) room.votes[targetId] = 0;
         room.votes[targetId]++;
 
-        // Emitir progreso de votos (sin revelar a quién, solo el conteo total)
         const totalVotes = Object.values(room.votes).reduce((a, b) => a + b, 0);
         io.to(roomCode).emit('voteProgress', { totalVotes, totalPlayers: room.players.length });
 
@@ -299,23 +283,22 @@ io.on('connection', (socket) => {
                 const wasHost = room.hostId === socket.id;
                 room.players.splice(idx, 1);
 
-                // --- FIX: Si el host se va, pasar el host al siguiente jugador ---
                 if (wasHost && room.players.length > 0) {
                     room.hostId = room.players[0].id;
                     io.to(room.hostId).emit('youAreHost');
                 }
 
+                // FIX: incluir hostId en el evento de actualización
                 io.to(code).emit('updatePlayerList', {
                     players: room.players,
-                    jesterActive: room.jesterActive
+                    jesterActive: room.jesterActive,
+                    hostId: room.hostId
                 });
 
                 if (room.players.length === 0) {
                     clearInterval(room.timer);
                     delete rooms[code];
-                }
-                // --- FIX: cubrir también el estado 'voting' ---
-                else if ((room.status === 'playing' || room.status === 'voting') && room.players.length < 3) {
+                } else if ((room.status === 'playing' || room.status === 'voting') && room.players.length < 3) {
                     clearInterval(room.timer);
                     room.status = 'lobby';
                     room.votes = {};
@@ -331,8 +314,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- FUNCIONES AUXILIARES ---
-
 function startVotingPhase(roomCode) {
     const room = rooms[roomCode];
     if (!room) return;
@@ -340,7 +321,7 @@ function startVotingPhase(roomCode) {
     clearInterval(room.timer);
     room.status = 'voting';
     room.votes = {};
-    room.votedPlayers = new Set(); // FIX: resetear votos al iniciar fase
+    room.votedPlayers = new Set();
     io.to(roomCode).emit('startVoting', room.players);
 }
 
@@ -363,10 +344,10 @@ function finishGame(roomCode) {
     }
 
     let winnerKey = 'impostor';
-    let message = 'Empate. Nadie fue expulsado.';
     const impostorName = room.players.find(p => p.id === room.impostorId)?.name || '???';
     const ejectedName = room.players.find(p => p.id === ejectedId)?.name || 'Nadie';
-    const secretWord = room.secretWord || '???'; // FIX: usar la palabra guardada
+    const secretWord = room.secretWord || '???';
+    let message = `Empate. Nadie fue expulsado. El impostor era ${impostorName}. La palabra era: "${secretWord}".`;
 
     if (!isTie && ejectedId) {
         if (ejectedId === room.jesterId) {
@@ -379,20 +360,17 @@ function finishGame(roomCode) {
             winnerKey = 'impostor';
             message = `¡ERROR! Expulsaron a un inocente (${ejectedName}). El impostor era ${impostorName}. La palabra era: "${secretWord}".`;
         }
-    } else {
-        message = `Empate. Nadie fue expulsado. El impostor era ${impostorName}. La palabra era: "${secretWord}".`;
     }
 
     io.to(roomCode).emit('gameEnded', { winnerKey, message, impostorName, secretWord });
 
-    // Resetear sala a lobby
     room.status = 'lobby';
     room.votes = {};
     room.votedPlayers = new Set();
     room.secretWord = null;
     room.impostorId = null;
     room.jesterId = null;
-    room.deck = [...wordPacks[room.category]]; // FIX: renovar el mazo entre partidas
+    room.deck = [...wordPacks[room.category]];
 
     broadcastRoomList();
 }
